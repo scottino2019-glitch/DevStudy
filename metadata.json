@@ -1,0 +1,6 @@
+{
+  "name": "DevStudy Planner",
+  "description": "Planner e taccuino per lo studio della programmazione diviso per linguaggi (HTML, CSS, JavaScript, Tailwind, React, Python) con snippet di codice, link, libri e appunti.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

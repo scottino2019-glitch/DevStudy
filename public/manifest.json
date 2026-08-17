@@ -1,0 +1,51 @@
+{
+  "name": "DevStudy Planner - Studio Programmazione",
+  "short_name": "DevStudy",
+  "description": "Planner giornaliero, raccolta codice e taccuino libri per programmatori.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "developer-tools"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Planner Giornaliero",
+      "short_name": "Planner",
+      "description": "Apri l'orario e le sessioni di oggi",
+      "url": "/?tab=planner",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Raccolta Codice",
+      "short_name": "Snippet",
+      "description": "Consulta o aggiungi frammenti di codice",
+      "url": "/?tab=snippets",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Libri & Appunti",
+      "short_name": "Libri",
+      "description": "Manuali di riferimento e note di studio",
+      "url": "/?tab=books",
+      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+    }
+  ]
+}
