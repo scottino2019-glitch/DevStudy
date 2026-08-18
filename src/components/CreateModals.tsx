@@ -16,6 +16,7 @@ export const NewSnippetModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
     TRACKS.find(t => t.id === defaultTrack)?.codeLang || 'javascript'
   );
   const [code, setCode] = useState('');
+  const [outputPreview, setOutputPreview] = useState('');
   const [tagsStr, setTagsStr] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,6 +34,7 @@ export const NewSnippetModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
       description,
       language,
       code,
+      outputPreview: outputPreview.trim() || undefined,
       tags,
     });
     onClose();
@@ -132,6 +134,31 @@ export const NewSnippetModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
               className="w-full font-mono rounded-xl border border-slate-300 bg-slate-950 text-slate-100 p-3 text-xs focus:ring-1 focus:ring-sky-400"
             />
           </div>
+
+          {language === 'css' && (
+            <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3.5 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-purple-900">
+                  Markup HTML di Prova (Sandbox Anteprima)
+                </label>
+                <span className="text-[10px] text-purple-600">Opzionale</span>
+              </div>
+              <p className="text-[11px] text-purple-700">
+                Markup HTML di esempio per visualizzare l'anteprima live di queste classi CSS.
+              </p>
+              <textarea
+                rows={3}
+                placeholder="<div class=&quot;mia-classe&quot;>Contenuto di prova</div>"
+                value={outputPreview}
+                onChange={e => setOutputPreview(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="off"
+                className="w-full font-mono rounded-xl border border-purple-200 bg-white text-slate-900 p-2.5 text-xs focus:ring-1 focus:ring-purple-400"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Tag (separati da virgola)</label>

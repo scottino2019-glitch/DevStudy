@@ -321,6 +321,10 @@ export const SnippetManager: React.FC<SnippetManagerProps> = ({ onOpenNewModal }
                     language={snippet.language}
                     allowPreview={true}
                     initialShowPreview={showAllPreviews}
+                    customHtml={snippet.outputPreview}
+                    onSaveCustomHtml={newHtml => {
+                      updateSnippet(snippet.id, { outputPreview: newHtml });
+                    }}
                   />
                 </div>
               </div>
@@ -355,6 +359,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({ snippet, onClose, o
   const [description, setDescription] = useState(snippet.description || '');
   const [code, setCode] = useState(snippet.code);
   const [language, setLanguage] = useState(snippet.language);
+  const [outputPreview, setOutputPreview] = useState(snippet.outputPreview || '');
   const [tagsStr, setTagsStr] = useState(snippet.tags.join(', '));
   const [trackId, setTrackId] = useState(snippet.trackId);
   const [isSaving, setIsSaving] = useState(false);
@@ -374,6 +379,7 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({ snippet, onClose, o
       description: description.trim(),
       code,
       language,
+      outputPreview: outputPreview.trim() || undefined,
       tags,
       trackId,
     });
@@ -468,6 +474,31 @@ const EditSnippetModal: React.FC<EditSnippetModalProps> = ({ snippet, onClose, o
               className="w-full font-mono rounded-xl border border-slate-300 bg-slate-950 text-slate-100 p-3 text-xs focus:ring-1 focus:ring-sky-400 transition"
             />
           </div>
+
+          {language === 'css' && (
+            <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3.5 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-purple-900">
+                  Markup HTML di Prova (Sandbox Anteprima)
+                </label>
+                <span className="text-[10px] text-purple-600">Opzionale</span>
+              </div>
+              <p className="text-[11px] text-purple-700">
+                Markup HTML utilizzato per renderizzare l'anteprima live di questo foglio di stile CSS.
+              </p>
+              <textarea
+                rows={3}
+                value={outputPreview}
+                onChange={e => setOutputPreview(e.target.value)}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="off"
+                placeholder="<div class=&quot;mia-classe&quot;>Contenuto di prova</div>"
+                className="w-full font-mono rounded-xl border border-purple-200 bg-white text-slate-900 p-2.5 text-xs focus:ring-1 focus:ring-purple-400"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Tag (separati da virgola)</label>

@@ -20,6 +20,8 @@ export interface CodeViewerProps {
   title?: string;
   allowPreview?: boolean;
   initialShowPreview?: boolean;
+  customHtml?: string;
+  onSaveCustomHtml?: (html: string) => void;
   className?: string;
 }
 
@@ -29,6 +31,8 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
   title,
   allowPreview = true,
   initialShowPreview = false,
+  customHtml: propCustomHtml,
+  onSaveCustomHtml,
   className = '',
 }) => {
   const [copied, setCopied] = useState(false);
@@ -36,8 +40,16 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
     initialShowPreview ? 'preview' : 'code'
   );
   const [key, setKey] = useState(0);
-  const [customHtml, setCustomHtml] = useState<string>('');
+  const [htmlContent, setHtmlContent] = useState<string>(propCustomHtml || '');
   const [showHtmlEditor, setShowHtmlEditor] = useState(false);
+  const [isSavedFeedback, setIsSavedFeedback] = useState(false);
+
+  // Sync propCustomHtml when it changes from outside
+  useEffect(() => {
+    if (propCustomHtml !== undefined) {
+      setHtmlContent(propCustomHtml);
+    }
+  }, [propCustomHtml]);
 
   // Sync initialShowPreview when prop changes
   useEffect(() => {
@@ -209,12 +221,25 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
 </div>`;
   }, [code, langNorm, parsedClasses]);
 
-  // Reset custom HTML when code changes
-  useEffect(() => {
-    setCustomHtml('');
-  }, [code]);
+  const activePreviewHtml = (htmlContent && htmlContent.trim()) ? htmlContent : defaultGeneratedHtml;
 
-  const activePreviewHtml = customHtml.trim() ? customHtml : defaultGeneratedHtml;
+  const handleSaveHtml = (textToSave?: string) => {
+    const value = textToSave !== undefined ? textToSave : (htmlContent || defaultGeneratedHtml);
+    if (onSaveCustomHtml) {
+      onSaveCustomHtml(value);
+      setIsSavedFeedback(true);
+      setTimeout(() => setIsSavedFeedback(false), 2000);
+    }
+  };
+
+  const handleResetHtml = () => {
+    setHtmlContent('');
+    if (onSaveCustomHtml) {
+      onSaveCustomHtml('');
+      setIsSavedFeedback(true);
+      setTimeout(() => setIsSavedFeedback(false), 2000);
+    }
+  };
 
   // Generate self-contained HTML for live preview
   const previewDoc = useMemo(() => {
@@ -752,29 +777,58 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       {/* HTML Sandbox Editor for CSS Live Testing */}
       {activeTab === 'preview' && showHtmlEditor && langNorm === 'css' && (
         <div className="border-b border-slate-800 bg-slate-950 p-3">
-          <div className="mb-1.5 flex items-center justify-between text-xs">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className="font-semibold text-purple-300 flex items-center gap-1.5">
-              <Sliders className="h-3.5 w-3.5" /> Modifica Markup HTML di Prova per il tuo CSS:
+              <Sliders className="h-3.5 w-3.5" /> Markup HTML di Prova per il tuo CSS:
             </span>
-            <button
-              type="button"
-              onClick={() => setCustomHtml(defaultGeneratedHtml)}
-              className="text-[11px] text-slate-400 hover:text-slate-200 underline"
-            >
-              Ripristina Predefinito
-            </button>
+            <div className="flex items-center gap-2">
+              {isSavedFeedback && (
+                <span className="text-[11px] font-bold text-emerald-400 animate-in fade-in">
+                  ✓ HTML Salvato!
+                </span>
+              )}
+              {onSaveCustomHtml && (
+                <button
+                  type="button"
+                  onClick={() => handleSaveHtml()}
+                  className="flex items-center gap-1 rounded-md bg-purple-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-purple-500 active:scale-95 transition"
+                  title="Salva permanentemente questo HTML nello snippet"
+                >
+                  <Check className="h-3 w-3" />
+                  <span>Salva HTML</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleResetHtml}
+                className="text-[11px] text-slate-400 hover:text-slate-200 underline"
+                title="Ripristina il markup HTML generato automaticamente"
+              >
+                Ripristina Predefinito
+              </button>
+            </div>
           </div>
           <textarea
-            value={customHtml || defaultGeneratedHtml}
-            onChange={e => setCustomHtml(e.target.value)}
-            rows={3}
+            value={htmlContent !== '' ? htmlContent : defaultGeneratedHtml}
+            onChange={e => {
+              setHtmlContent(e.target.value);
+            }}
+            onBlur={e => {
+              if (onSaveCustomHtml) {
+                handleSaveHtml(e.target.value);
+              }
+            }}
+            rows={4}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
             autoComplete="off"
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 p-2 font-mono text-xs text-slate-200 focus:border-purple-400 focus:outline-hidden"
+            className="w-full rounded-xl border border-slate-700 bg-slate-900 p-2.5 font-mono text-xs text-slate-200 focus:border-purple-400 focus:outline-hidden leading-relaxed"
             placeholder="Incolla o modifica qui l'HTML per testare le tue classi CSS..."
           />
+          <p className="mt-1 text-[10px] text-slate-500">
+            💡 Suggerimento: Le modifiche all'HTML vengono salvate automaticamente nello snippet e ricordate nelle prossime sessioni.
+          </p>
         </div>
       )}
 
