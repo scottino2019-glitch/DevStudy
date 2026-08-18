@@ -3,6 +3,7 @@ import { useStudy } from '../context/StudyContext';
 import { getTrackById, TRACKS } from '../data/tracks';
 import { CodeViewer } from './CodeViewer';
 import { CodeSnippet } from '../types';
+import { TrackIcon } from './TrackIcon';
 import {
   Search,
   Plus,
@@ -11,12 +12,8 @@ import {
   Edit3,
   Tag,
   Code2,
-  Sparkles,
-  Filter,
-  Check,
   X,
-  ExternalLink,
-  BookOpen
+  Layers
 } from 'lucide-react';
 
 interface SnippetManagerProps {
@@ -24,7 +21,7 @@ interface SnippetManagerProps {
 }
 
 export const SnippetManager: React.FC<SnippetManagerProps> = ({ onOpenNewModal }) => {
-  const { data, activeTrackId, deleteSnippet, toggleFavoriteSnippet, updateSnippet } = useStudy();
+  const { data, activeTrackId, setActiveTrackId, deleteSnippet, toggleFavoriteSnippet, updateSnippet } = useStudy();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
@@ -66,8 +63,67 @@ export const SnippetManager: React.FC<SnippetManagerProps> = ({ onOpenNewModal }
 
   return (
     <div className="py-6">
+      {/* Subject Filter Ribbon */}
+      <div className="mb-6 flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
+        <button
+          onClick={() => {
+            setActiveTrackId('overview');
+            setSelectedTag('all');
+          }}
+          className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition shadow-xs ${
+            activeTrackId === 'overview'
+              ? 'bg-slate-900 text-white'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span>Tutte le Materie</span>
+          <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+            activeTrackId === 'overview' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600'
+          }`}>
+            {data.snippets.length}
+          </span>
+        </button>
+
+        {TRACKS.map(track => {
+          const trackCount = data.snippets.filter(s => s.trackId === track.id).length;
+          const isActive = activeTrackId === track.id;
+          return (
+            <button
+              key={track.id}
+              onClick={() => {
+                setActiveTrackId(track.id);
+                setSelectedTag('all');
+              }}
+              className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition shadow-xs ${
+                isActive
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <div
+                className="flex h-4 w-4 items-center justify-center rounded-md text-[10px]"
+                style={{ color: isActive ? '#38bdf8' : track.color }}
+              >
+                <TrackIcon name={track.iconName} className="h-3.5 w-3.5" />
+              </div>
+              <span>{track.name}</span>
+              <span
+                className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                  isActive
+                    ? 'bg-slate-800 text-slate-200'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {trackCount}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Controls Bar: Search, Tags, Filter, Add */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <div className="flex flex-wrap items-center gap-2 flex-1">
           {/* Search box */}
           <div className="relative min-w-[240px] flex-1 max-w-md">

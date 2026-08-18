@@ -97,87 +97,252 @@ export const INITIAL_DATA: AppStorageData = {
     {
       id: 'snip-css-1',
       trackId: 'css',
-      title: 'Layout Responsive con CSS Grid & auto-fit / minmax',
-      description: 'Griglia fluida che si adatta a qualsiasi schermo senza media query!',
+      title: 'Pulsanti Moderni con Effetto Glow al Neon & Transizioni',
+      description: 'Stile pulsante con bagliore colorato, animazione di scala al click e transizioni fluide.',
       language: 'css',
-      tags: ['Grid', 'Responsive', 'Layout'],
-      code: `.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  padding: 1rem;
-}
-
-.card {
-  background: white;
-  border-radius: 12px;
+      tags: ['Pulsanti', 'Glow', 'Animazioni', 'Shadows'],
+      code: `/* Container di allineamento */
+.glow-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+/* Pulsante principale con Glow */
+.btn-glow {
+  position: relative;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(168, 85, 247, 0.6);
+  filter: brightness(1.1);
+}
+
+.btn-glow:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Variante secondaria con contorno neon */
+.btn-outline-glow {
+  background: transparent;
+  color: #6366f1;
+  border: 2px solid #6366f1;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-outline-glow:hover {
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.35);
+  transform: translateY(-2px);
+}`,
+      isFavorite: true,
+      createdAt: '2026-08-10T10:00:00.000Z',
+      updatedAt: '2026-08-10T10:00:00.000Z',
+    },
+    {
+      id: 'snip-css-2',
+      trackId: 'css',
+      title: 'Card Glassmorphism con Effetto Vetro Smerigliato',
+      description: 'Design frosted glass moderno con sfocatura di sfondo (backdrop-filter) e bordi traslucidi.',
+      language: 'css',
+      tags: ['Glassmorphism', 'Backdrop', 'Card', 'Modern UI'],
+      code: `/* Sfondo sfumato per evidenziare la trasparenza */
+.glass-wrapper {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+  padding: 2.5rem 1.5rem;
+  border-radius: 1rem;
+}
+
+/* Card in vetro smerigliato */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 380px;
+}
+
+.glass-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.01em;
+}
+
+.glass-text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1.25rem;
+}
+
+.glass-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }`,
       isFavorite: true,
       createdAt: '2026-08-10T11:00:00.000Z',
       updatedAt: '2026-08-10T11:00:00.000Z',
     },
     {
-      id: 'snip-css-2',
+      id: 'snip-css-3',
       trackId: 'css',
-      title: 'Centratura Perfetta & Tipografia Fluida con clamp()',
-      description: 'Tecnica moderna per centrare in Flexbox/Grid e font size fluido con clamp().',
+      title: 'Layout a Griglia Dinamica con CSS Grid & auto-fit',
+      description: 'Griglia reattiva senza media query: le colonne si ridimensionano e riposizionano automaticamente.',
       language: 'css',
-      tags: ['Centratura', 'clamp', 'Tipografia'],
-      code: `/* Centratura con Grid */
-.hero-center {
+      tags: ['Grid', 'Responsive', 'Layout', 'Auto-fit'],
+      code: `.card-grid {
   display: grid;
-  place-items: center;
-  min-height: 50vh;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  padding: 1rem;
 }
 
-/* Tipografia fluida: min 1.5rem, ideale 4vw, max 3rem */
-.fluid-title {
-  font-size: clamp(1.5rem, 4vw + 1rem, 3.25rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: #1e293b;
+.grid-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.grid-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+.grid-card-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
 }`,
       createdAt: '2026-08-11T12:00:00.000Z',
       updatedAt: '2026-08-11T12:00:00.000Z',
     },
     {
-      id: 'snip-css-3',
+      id: 'snip-css-4',
       trackId: 'css',
-      title: 'CSS Custom Properties con Tema Scuro / Chiaro',
-      description: 'Variabili CSS native per gestione dinamica dei colori e preferenze di sistema.',
+      title: 'Tipografia Fluida & Centratura Hero con clamp()',
+      description: 'Dimensione del testo fluida da mobile a desktop con funzione clamp() senza breakpoints rigidi.',
       language: 'css',
-      tags: ['Variabili', 'Dark Mode', 'Design Tokens'],
-      code: `:root {
-  --bg-primary: #f8fafc;
-  --text-primary: #0f172a;
-  --accent: #2563eb;
+      tags: ['Tipografia', 'clamp', 'Centratura', 'Fluid'],
+      code: `/* Centratura con CSS Grid */
+.hero-center {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: #f8fafc;
+  border-radius: 1rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #0f172a;
-    --text-primary: #f8fafc;
-    --accent: #3b82f6;
+/* Titolo fluido: min 1.5rem, ideale 4vw + 1rem, max 3rem */
+.fluid-title {
+  font-size: clamp(1.5rem, 3.5vw + 1rem, 2.75rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  margin: 0 0 0.75rem 0;
+}
+
+/* Sottotitolo fluido */
+.fluid-subtitle {
+  font-size: clamp(0.95rem, 1.5vw + 0.5rem, 1.25rem);
+  color: #64748b;
+  max-width: 550px;
+  line-height: 1.6;
+  margin: 0 auto;
+}`,
+      createdAt: '2026-08-11T14:00:00.000Z',
+      updatedAt: '2026-08-11T14:00:00.000Z',
+    },
+    {
+      id: 'snip-css-5',
+      trackId: 'css',
+      title: 'Badge di Notifica con Animazione Pulse a Onde',
+      description: 'Pillola di stato live con punto pulsante animato tramite @keyframes radar.',
+      language: 'css',
+      tags: ['Badge', 'Animazioni', 'Keyframes', 'Pulse'],
+      code: `.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Punto pulsante */
+.pulse-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
   }
-}
-
-body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: system-ui, sans-serif;
+  80%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
 }`,
       createdAt: '2026-08-12T15:00:00.000Z',
       updatedAt: '2026-08-12T15:00:00.000Z',
     },
-
     // --- JavaScript ---
     {
       id: 'snip-js-1',
@@ -199,12 +364,13 @@ body {
 // Esempio d'uso con ricerca input:
 const handleSearch = debounce((query) => {
   console.log("Ricerca per termine:", query);
-  // effettua fetch o filtro
 }, 400);
 
 document.querySelector('#searchInput')?.addEventListener('input', (e) => {
   handleSearch(e.target.value);
-});`,
+});
+
+console.log("⚡ Prova a digitare nel campo sopra per testare il debounce!");`,
       isFavorite: true,
       createdAt: '2026-08-10T14:20:00.000Z',
       updatedAt: '2026-08-10T14:20:00.000Z',
@@ -232,7 +398,12 @@ document.querySelector('#searchInput')?.addEventListener('input', (e) => {
   } finally {
     clearTimeout(timeoutId);
   }
-}`,
+}
+
+// Test rapido con API pubblica JSON:
+fetchWithTimeout('https://jsonplaceholder.typicode.com/todos/1')
+  .then(data => console.log("Dati ricevuti con successo:", data))
+  .catch(err => console.log("Errore fetch:", err.message));`,
       createdAt: '2026-08-11T16:00:00.000Z',
       updatedAt: '2026-08-11T16:00:00.000Z',
     },
@@ -244,22 +415,46 @@ document.querySelector('#searchInput')?.addEventListener('input', (e) => {
       language: 'javascript',
       tags: ['Array', 'Reduce', 'Dati'],
       code: `const studySessions = [
-  { track: 'react', minutes: 45 },
-  { track: 'python', minutes: 60 },
-  { track: 'react', minutes: 30 },
-  { track: 'javascript', minutes: 50 },
+  { track: 'react', minutes: 45, date: '2026-08-10' },
+  { track: 'python', minutes: 60, date: '2026-08-10' },
+  { track: 'react', minutes: 30, date: '2026-08-11' },
+  { track: 'javascript', minutes: 50, date: '2026-08-11' },
+  { track: 'javascript', minutes: 40, date: '2026-08-12' },
 ];
 
-// Metodo con reduce classico:
+// Raggruppa e somma i minuti per materia:
 const totalByTrack = studySessions.reduce((acc, curr) => {
   acc[curr.track] = (acc[curr.track] || 0) + curr.minutes;
   return acc;
 }, {});
 
-console.log("Minuti totali per materia:", totalByTrack);
-// Output: { react: 75, python: 60, javascript: 50 }`,
+console.log("📊 Minuti totali per materia:", totalByTrack);
+console.log("⏱️ Totale generale ore:", (studySessions.reduce((a, c) => a + c.minutes, 0) / 60).toFixed(1));`,
       createdAt: '2026-08-12T17:00:00.000Z',
       updatedAt: '2026-08-12T17:00:00.000Z',
+    },
+    {
+      id: 'snip-js-4',
+      trackId: 'javascript',
+      title: 'Gestione Concorrenza con Promise.allSettled',
+      description: 'Esegui più promesse in parallelo senza interrompere le altre in caso di errore.',
+      language: 'javascript',
+      tags: ['Async', 'Promises', 'Concorrenza'],
+      code: `const taskA = Promise.resolve("Capitolo 1 Letto");
+const taskB = Promise.reject(new Error("Connessione timeout"));
+const taskC = Promise.resolve("Esercizi Flexbox completati");
+
+Promise.allSettled([taskA, taskB, taskC]).then(results => {
+  results.forEach((res, i) => {
+    if (res.status === 'fulfilled') {
+      console.log(\`✅ Risultato \${i+1}:\`, res.value);
+    } else {
+      console.log(\`❌ Fallito \${i+1}:\`, res.reason.message);
+    }
+  });
+});`,
+      createdAt: '2026-08-13T10:00:00.000Z',
+      updatedAt: '2026-08-13T10:00:00.000Z',
     },
 
     // --- Tailwind CSS ---
@@ -328,13 +523,73 @@ console.log("Minuti totali per materia:", totalByTrack);
     {
       id: 'snip-react-1',
       trackId: 'react',
+      title: 'Componente Contatore Interattivo con useState & Badge',
+      description: 'Componente React interattivo con controlli di incremento, decremento e stato condizionale.',
+      language: 'tsx',
+      tags: ['useState', 'Componente', 'Interattività'],
+      code: `function StudyCounter() {
+  const [count, setCount] = useState(0);
+  const [goal, setGoal] = useState(5);
+
+  return (
+    <div className="rounded-2xl border border-sky-200 bg-white p-6 shadow-sm max-w-md">
+      <div className="flex items-center justify-between mb-4">
+        <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-800">
+          React Component Demo
+        </span>
+        <span className="text-xs text-slate-400 font-mono">
+          Obiettivo: {goal} pomodori
+        </span>
+      </div>
+
+      <h3 className="text-base font-bold text-slate-900 mb-2">Sessioni Completate Oggi</h3>
+      <div className="font-mono text-4xl font-extrabold text-sky-600 my-4 text-center">
+        {count}
+      </div>
+
+      <div className="flex items-center justify-center gap-2">
+        <button
+          onClick={() => setCount(Math.max(0, count - 1))}
+          className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition"
+        >
+          - 1
+        </button>
+        <button
+          onClick={() => setCount(count + 1)}
+          className="rounded-xl bg-sky-600 px-5 py-2 text-sm font-bold text-white shadow-xs hover:bg-sky-500 active:scale-95 transition"
+        >
+          + 1 Fatto
+        </button>
+        <button
+          onClick={() => setCount(0)}
+          className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50"
+        >
+          Reset
+        </button>
+      </div>
+
+      {count >= goal && (
+        <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-2.5 text-center text-xs font-bold text-emerald-800">
+          🎉 Complimenti! Hai raggiunto il tuo obiettivo di studio!
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default StudyCounter;`,
+      isFavorite: true,
+      createdAt: '2026-08-10T16:00:00.000Z',
+      updatedAt: '2026-08-10T16:00:00.000Z',
+    },
+    {
+      id: 'snip-react-2',
+      trackId: 'react',
       title: 'Custom Hook useLocalStorage con Sincronizzazione',
       description: 'Hook React riutilizzabile per persistere lo stato nel localStorage con fallback sicuro.',
       language: 'tsx',
       tags: ['Hooks', 'LocalStorage', 'TypeScript'],
-      code: `import { useState, useEffect } from 'react';
-
-export function useLocalStorage<T>(key: string, initialValue: T) {
+      code: `export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -356,14 +611,14 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   return [storedValue, setStoredValue] as const;
 }`,
       isFavorite: true,
-      createdAt: '2026-08-10T16:00:00.000Z',
-      updatedAt: '2026-08-10T16:00:00.000Z',
+      createdAt: '2026-08-10T16:30:00.000Z',
+      updatedAt: '2026-08-10T16:30:00.000Z',
     },
     {
-      id: 'snip-react-2',
+      id: 'snip-react-3',
       trackId: 'react',
-      title: 'Pattern useReducer per Stato Complesso di Studio',
-      description: 'Gestione robusta di azioni (startSession, pauseSession, completeTask) con Reducer.',
+      title: 'Pattern useReducer per Stato di Studio',
+      description: 'Gestione robusta di azioni (startSession, tick, reset) con Reducer.',
       language: 'tsx',
       tags: ['useReducer', 'State', 'Architettura'],
       code: `type State = { isStudying: boolean; seconds: number; activeSubject: string };
@@ -386,6 +641,100 @@ function studyReducer(state: State, action: Action): State {
 }`,
       createdAt: '2026-08-11T19:30:00.000Z',
       updatedAt: '2026-08-11T19:30:00.000Z',
+    },
+    {
+      id: 'snip-react-4',
+      trackId: 'react',
+      title: 'Custom Hook useFetch con Loading, Error & Caching',
+      description: 'Hook per gestire chiamate asincrone con stato di caricamento e pulizia degli effetti.',
+      language: 'tsx',
+      tags: ['Hooks', 'useFetch', 'Async', 'API'],
+      code: `function useFetch<T>(url: string) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(\`Errore HTTP \${res.status}\`);
+        return res.json();
+      })
+      .then(json => {
+        if (isMounted) {
+          setData(json);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (isMounted) {
+          setError(err.message);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [url]);
+
+  return { data, loading, error };
+}`,
+      createdAt: '2026-08-12T10:00:00.000Z',
+      updatedAt: '2026-08-12T10:00:00.000Z',
+    },
+    {
+      id: 'snip-react-5',
+      trackId: 'react',
+      title: 'Componente Form Controllato con Validazione Live',
+      description: 'Gestione modulare di input controllati con messaggi di errore e reset.',
+      language: 'tsx',
+      tags: ['Form', 'Componenti', 'Validazione', 'Eventi'],
+      code: `function QuickNoteForm({ onSave }: { onSave?: (note: string) => void }) {
+  const [text, setText] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const isValid = text.trim().length >= 5;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValid) return;
+    onSave?.(text);
+    setSubmitted(true);
+    setText('');
+    setTimeout(() => setSubmitted(false), 2500);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="p-4 rounded-xl border border-slate-200 bg-white space-y-3 max-w-sm">
+      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Nuovo Appunto Rapido</h4>
+      <input
+        type="text"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Scrivi almeno 5 caratteri..."
+        className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:outline-sky-500"
+      />
+      {!isValid && text.length > 0 && (
+        <p className="text-[11px] text-amber-600">Inserisci almeno 5 caratteri.</p>
+      )}
+      <button
+        type="submit"
+        disabled={!isValid}
+        className="w-full py-1.5 px-3 bg-sky-600 text-white rounded-lg text-xs font-bold disabled:opacity-50 hover:bg-sky-500 transition"
+      >
+        Salva Appunto
+      </button>
+      {submitted && <p className="text-[11px] text-emerald-600 font-bold">✅ Appunto salvato!</p>}
+    </form>
+  );
+}`,
+      createdAt: '2026-08-12T11:00:00.000Z',
+      updatedAt: '2026-08-12T11:00:00.000Z',
     },
 
     // --- Python ---
