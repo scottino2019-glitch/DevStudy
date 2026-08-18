@@ -39,20 +39,24 @@ export const NewSnippetModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
-        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 backdrop-blur-xs overscroll-contain">
+      <div className="w-full max-w-2xl max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3.5">
           <div className="flex items-center gap-2">
-            <Code2 className="h-5 w-5 text-slate-700" />
-            <h3 className="text-base font-bold text-slate-900">Nuovo Snippet di Codice</h3>
+            <Code2 className="h-4 w-4 text-slate-700" />
+            <h3 className="text-sm sm:text-base font-bold text-slate-900">Nuovo Snippet di Codice</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Materia / Linguaggio</label>
               <select
@@ -111,14 +115,21 @@ export const NewSnippetModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Codice *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700">Codice *</label>
+              <span className="text-[10px] text-slate-500 font-mono">Mobile safe</span>
+            </div>
             <textarea
               required
-              rows={8}
+              rows={7}
               placeholder="// Incolla qui il tuo codice di esempio..."
               value={code}
               onChange={e => setCode(e.target.value)}
-              className="w-full font-mono rounded-xl border border-slate-300 bg-slate-900 text-slate-100 p-3 text-xs focus:ring-1 focus:ring-slate-400"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="off"
+              className="w-full font-mono rounded-xl border border-slate-300 bg-slate-950 text-slate-100 p-3 text-xs focus:ring-1 focus:ring-sky-400"
             />
           </div>
 
@@ -133,7 +144,7 @@ export const NewSnippetModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 sticky bottom-0 bg-white">
             <button
               type="button"
               onClick={onClose}
@@ -143,7 +154,7 @@ export const NewSnippetModal: React.FC<{ onClose: () => void }> = ({ onClose }) 
             </button>
             <button
               type="submit"
-              className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800 shadow-xs"
+              className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white hover:bg-slate-800 shadow-xs"
             >
               Crea Snippet
             </button>
@@ -634,19 +645,19 @@ export const NewNoteModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
-        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 backdrop-blur-xs overscroll-contain">
+      <div className="w-full max-w-xl max-h-[92dvh] sm:max-h-[85vh] flex flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border border-slate-200">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3.5">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-slate-700" />
-            <h3 className="text-base font-bold text-slate-900">Nuovo Appunto di Studio</h3>
+            <h3 className="text-sm sm:text-base font-bold text-slate-900">Nuovo Appunto di Studio</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Materia</label>
@@ -708,7 +719,7 @@ export const NewNoteModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 sticky bottom-0 bg-white">
             <button
               type="button"
               onClick={onClose}
@@ -718,7 +729,7 @@ export const NewNoteModal: React.FC<{ onClose: () => void }> = ({ onClose }) => 
             </button>
             <button
               type="submit"
-              className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800"
+              className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white hover:bg-slate-800"
             >
               Salva Appunto
             </button>

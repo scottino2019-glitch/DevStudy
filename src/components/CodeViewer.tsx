@@ -20,7 +20,7 @@ interface CodeViewerProps {
   className?: string;
 }
 
-export const CodeViewer: React.FC<CodeViewerProps> = ({
+const CodeViewerBase: React.FC<CodeViewerProps> = ({
   code,
   language,
   title,
@@ -54,15 +54,18 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
     language.toLowerCase()
   );
 
-  // Extract all CSS class selectors from snippet (e.g., .btn-glow, .glass-card, etc.)
+  // Fast, safe class extractor without dangerous lookahead or regex backtracking
   const parsedClasses = useMemo(() => {
     if (language.toLowerCase() !== 'css') return [];
-    const classRegex = /\.([a-zA-Z0-9_-]+)(?=[^\{]*\{)/g;
     const matches = new Set<string>();
+    const safeRegex = /\.([a-zA-Z][a-zA-Z0-9_-]{2,30})/g;
     let m;
-    while ((m = classRegex.exec(code)) !== null) {
-      if (m[1] && !m[1].startsWith('dark') && !m[1].startsWith('theme')) {
-        matches.add(m[1]);
+    let count = 0;
+    while ((m = safeRegex.exec(code)) !== null && count < 8) {
+      const cls = m[1];
+      if (!cls.startsWith('dark') && !cls.startsWith('theme') && !cls.startsWith('media')) {
+        matches.add(cls);
+        count++;
       }
     }
     return Array.from(matches);
@@ -185,8 +188,9 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   // Active HTML for CSS preview
   const activePreviewHtml = customHtml.trim() ? customHtml : defaultGeneratedHtml;
 
-  // Generate rich preview document depending on language
+  // Generate rich preview document ONLY when live preview is open
   const previewDoc = useMemo(() => {
+    if (!showLivePreview) return '';
     const lang = language.toLowerCase();
 
     // 1. HTML / Tailwind
@@ -637,3 +641,5 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
     </div>
   );
 };
+
+export const CodeViewer = React.memo(CodeViewerBase);
