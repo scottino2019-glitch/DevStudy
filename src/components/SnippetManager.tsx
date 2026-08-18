@@ -13,7 +13,8 @@ import {
   Tag,
   Code2,
   X,
-  Layers
+  Layers,
+  Eye
 } from 'lucide-react';
 
 interface SnippetManagerProps {
@@ -25,6 +26,7 @@ export const SnippetManager: React.FC<SnippetManagerProps> = ({ onOpenNewModal }
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [showAllPreviews, setShowAllPreviews] = useState(false);
   const [editingSnippet, setEditingSnippet] = useState<CodeSnippet | null>(null);
 
   // Filter snippets based on active track or all
@@ -157,6 +159,20 @@ export const SnippetManager: React.FC<SnippetManagerProps> = ({ onOpenNewModal }
             <Star className={`h-3.5 w-3.5 ${onlyFavorites ? 'fill-amber-400 text-amber-500' : 'text-slate-400'}`} />
             <span>Preferiti</span>
           </button>
+
+          {/* Toggle all previews */}
+          <button
+            onClick={() => setShowAllPreviews(!showAllPreviews)}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+              showAllPreviews
+                ? 'border-sky-500 bg-sky-50 text-sky-800'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+            title="Mostra l'anteprima live su tutti gli snippet"
+          >
+            <Eye className={`h-3.5 w-3.5 ${showAllPreviews ? 'text-sky-600' : 'text-slate-400'}`} />
+            <span>{showAllPreviews ? 'Tutte Anteprime (Attive)' : 'Mostra Anteprime'}</span>
+          </button>
         </div>
 
         {/* Add new snippet button */}
@@ -274,12 +290,8 @@ export const SnippetManager: React.FC<SnippetManagerProps> = ({ onOpenNewModal }
                       <Edit3 className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(`Sei sicuro di voler eliminare lo snippet "${snippet.title}"?`)) {
-                          deleteSnippet(snippet.id);
-                        }
-                      }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                      onClick={() => deleteSnippet(snippet.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 active:scale-95 transition"
                       title="Elimina Snippet"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -308,6 +320,7 @@ export const SnippetManager: React.FC<SnippetManagerProps> = ({ onOpenNewModal }
                     code={snippet.code}
                     language={snippet.language}
                     allowPreview={true}
+                    initialShowPreview={showAllPreviews}
                   />
                 </div>
               </div>

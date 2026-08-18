@@ -310,12 +310,8 @@ export const RoadmapPlanner: React.FC<RoadmapPlannerProps> = ({ onOpenNewTaskMod
                           <Edit3 className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm(`Rimuovere l'obiettivo "${task.title}"?`)) {
-                              deleteTask(task.id);
-                            }
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                          onClick={() => deleteTask(task.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 active:scale-95 transition"
                           title="Elimina obiettivo"
                         >
                           <Trash2 className="h-4 w-4" />

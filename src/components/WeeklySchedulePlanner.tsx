@@ -423,10 +423,10 @@ export const WeeklySchedulePlanner: React.FC<WeeklySchedulePlannerProps> = ({
                                 </button>
                                 <button
                                   onClick={() => deleteScheduleBlock(block.id)}
-                                  className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
-                                  title="Elimina"
+                                  className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 active:scale-95 transition"
+                                  title="Elimina sessione"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             </div>

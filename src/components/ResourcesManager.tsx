@@ -254,12 +254,8 @@ export const ResourcesManager: React.FC<ResourcesManagerProps> = ({
                             <Edit3 className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            onClick={() => {
-                              if (confirm(`Eliminare il libro "${book.title}"?`)) {
-                                deleteBook(book.id);
-                              }
-                            }}
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                            onClick={() => deleteBook(book.id)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 active:scale-95 transition"
                             title="Elimina Libro"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -411,12 +407,9 @@ export const ResourcesManager: React.FC<ResourcesManagerProps> = ({
                             <Edit3 className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            onClick={() => {
-                              if (confirm(`Eliminare "${res.title}"?`)) {
-                                deleteResource(res.id);
-                              }
-                            }}
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => deleteResource(res.id)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 active:scale-95 transition"
+                            title="Elimina risorsa"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

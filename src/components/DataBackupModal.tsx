@@ -13,6 +13,9 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({ isOpen, onClos
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [dailyGoalInput, setDailyGoalInput] = useState(data.dailyGoalMinutes || 60);
 
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [goalSavedFeedback, setGoalSavedFeedback] = useState(false);
+
   if (!isOpen) return null;
 
   const handleExport = () => {
@@ -56,16 +59,16 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({ isOpen, onClos
   };
 
   const handleReset = () => {
-    if (confirm('Sei sicuro di voler ripristinare i dati di default? Eventuali modifiche non esportate andranno perse.')) {
-      resetToDefaults();
-      onClose();
-    }
+    resetToDefaults();
+    setShowResetConfirm(false);
+    onClose();
   };
 
   const handleSaveGoal = (e: React.FormEvent) => {
     e.preventDefault();
     setDailyGoal(Number(dailyGoalInput));
-    alert('Obiettivo giornaliero salvato!');
+    setGoalSavedFeedback(true);
+    setTimeout(() => setGoalSavedFeedback(false), 2000);
   };
 
   return (
@@ -103,6 +106,11 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({ isOpen, onClos
               >
                 Salva
               </button>
+              {goalSavedFeedback && (
+                <span className="text-xs font-bold text-emerald-600 animate-fade-in">
+                  ✓ Salvato!
+                </span>
+              )}
             </form>
           </div>
 
@@ -169,13 +177,35 @@ export const DataBackupModal: React.FC<DataBackupModalProps> = ({ isOpen, onClos
             <p className="text-xs text-slate-500 mb-3">
               Reimposta tutti gli snippet, obiettivi, libri e note allo stato di fabbrica iniziale.
             </p>
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              <span>Ripristina Starter Kit</span>
-            </button>
+            {showResetConfirm ? (
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3 space-y-2">
+                <p className="text-xs font-medium text-red-800">
+                  ⚠️ Sei sicuro? Tutti i dati personalizzati verranno ripristinati.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleReset}
+                    className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 transition"
+                  >
+                    Sì, Ripristina
+                  </button>
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-300 transition"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Ripristina Starter Kit</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

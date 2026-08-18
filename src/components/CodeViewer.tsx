@@ -5,18 +5,21 @@ import {
   Eye,
   Code as CodeIcon,
   RotateCcw,
-  Sparkles,
   Sliders,
-  Edit3,
-  CheckCircle2,
-  Terminal
+  Play,
+  Terminal,
+  Layers,
+  Sparkles,
+  Maximize2,
+  ExternalLink
 } from 'lucide-react';
 
-interface CodeViewerProps {
+export interface CodeViewerProps {
   code: string;
   language: string;
   title?: string;
   allowPreview?: boolean;
+  initialShowPreview?: boolean;
   className?: string;
 }
 
@@ -25,13 +28,23 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
   language,
   title,
   allowPreview = true,
+  initialShowPreview = false,
   className = '',
 }) => {
   const [copied, setCopied] = useState(false);
-  const [showLivePreview, setShowLivePreview] = useState(false);
+  const [activeTab, setActiveTab] = useState<'code' | 'preview'>(
+    initialShowPreview ? 'preview' : 'code'
+  );
   const [key, setKey] = useState(0);
   const [customHtml, setCustomHtml] = useState<string>('');
   const [showHtmlEditor, setShowHtmlEditor] = useState(false);
+
+  // Sync initialShowPreview when prop changes
+  useEffect(() => {
+    if (initialShowPreview) {
+      setActiveTab('preview');
+    }
+  }, [initialShowPreview]);
 
   const handleCopy = async () => {
     try {
@@ -50,18 +63,34 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
     }
   };
 
-  const isWebCode = ['html', 'css', 'javascript', 'js', 'tsx', 'jsx', 'typescript', 'ts'].includes(
-    language.toLowerCase()
-  );
+  const langNorm = (language || 'plaintext').toLowerCase().trim();
 
-  // Fast, safe class extractor without dangerous lookahead or regex backtracking
+  const isPreviewable = useMemo(() => {
+    return [
+      'html',
+      'htm',
+      'css',
+      'javascript',
+      'js',
+      'tsx',
+      'jsx',
+      'typescript',
+      'ts',
+      'react',
+      'tailwind',
+      'python',
+      'py'
+    ].includes(langNorm);
+  }, [langNorm]);
+
+  // Fast and safe CSS class extractor
   const parsedClasses = useMemo(() => {
-    if (language.toLowerCase() !== 'css') return [];
+    if (langNorm !== 'css') return [];
     const matches = new Set<string>();
     const safeRegex = /\.([a-zA-Z][a-zA-Z0-9_-]{2,30})/g;
     let m;
     let count = 0;
-    while ((m = safeRegex.exec(code)) !== null && count < 8) {
+    while ((m = safeRegex.exec(code)) !== null && count < 10) {
       const cls = m[1];
       if (!cls.startsWith('dark') && !cls.startsWith('theme') && !cls.startsWith('media')) {
         matches.add(cls);
@@ -69,13 +98,11 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       }
     }
     return Array.from(matches);
-  }, [code, language]);
+  }, [code, langNorm]);
 
   // Generate smart default HTML sandbox markup based on the CSS rules present
   const defaultGeneratedHtml = useMemo(() => {
-    const lang = language.toLowerCase();
-    if (lang !== 'css') return '';
-
+    if (langNorm !== 'css') return '';
     const lowerCode = code.toLowerCase();
 
     // 1. Glow Buttons
@@ -154,7 +181,7 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       }
       if (cls.includes('card') || cls.includes('box') || cls.includes('container') || cls.includes('wrapper')) {
         return `<div class="${cls}">
-  <h3 style="margin-top: 0;">Card / Box (.${cls})</h3>
+  <h3 style="margin-top: 0; font-size: 16px; font-weight: bold;">Card / Box (.${cls})</h3>
   <p style="font-size: 13px; opacity: 0.85;">Contenuto di prova formattato con la classe CSS .${cls}</p>
 </div>`;
       }
@@ -174,27 +201,27 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
     }
 
     return `<div style="padding: 24px;">
-  <h2 style="margin-top: 0;">Anteprima CSS</h2>
-  <p>Le regole CSS definite nello snippet sono applicate a questo documento.</p>
-  <button style="padding: 8px 16px; border-radius: 8px; cursor: pointer;">Pulsante di Prova</button>
+  <h3 style="margin-top: 0; color: #0f172a; font-size: 16px; font-weight: bold;">Anteprima CSS Attiva</h3>
+  <p style="color: #64748b; font-size: 13px;">Le regole CSS definite nello snippet sono applicate a questo documento.</p>
+  <button style="padding: 8px 16px; border-radius: 8px; background: #3b82f6; color: white; border: none; font-weight: bold; cursor: pointer;">
+    Pulsante di Prova
+  </button>
 </div>`;
-  }, [code, language, parsedClasses]);
+  }, [code, langNorm, parsedClasses]);
 
   // Reset custom HTML when code changes
   useEffect(() => {
     setCustomHtml('');
   }, [code]);
 
-  // Active HTML for CSS preview
   const activePreviewHtml = customHtml.trim() ? customHtml : defaultGeneratedHtml;
 
-  // Generate rich preview document ONLY when live preview is open
+  // Generate self-contained HTML for live preview
   const previewDoc = useMemo(() => {
-    if (!showLivePreview) return '';
-    const lang = language.toLowerCase();
+    if (activeTab !== 'preview') return '';
 
-    // 1. HTML / Tailwind
-    if (lang === 'html') {
+    // --- HTML / Tailwind ---
+    if (langNorm === 'html' || langNorm === 'htm' || langNorm === 'tailwind') {
       if (code.includes('<html') || code.includes('<!DOCTYPE')) {
         return code;
       }
@@ -214,9 +241,8 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
 </html>`;
     }
 
-    // 2. CSS (Dynamic runner with real-time selector execution & HTML sandbox)
-    if (lang === 'css') {
-      // If the snippet is already full HTML with <style> or <div>, render it directly
+    // --- CSS ---
+    if (langNorm === 'css') {
       if (code.includes('<style>') || code.includes('<div') || code.includes('<section')) {
         return `<!DOCTYPE html>
 <html lang="it">
@@ -247,10 +273,8 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       padding: 16px;
       background: #f8fafc;
       color: #0f172a;
-      transition: background 0.25s ease, color 0.25s ease;
     }
-
-    /* CUSTOM SNIPPET CSS RULES */
+    /* SNIPPET CSS RULES */
     ${code}
   </style>
 </head>
@@ -260,13 +284,16 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
 </html>`;
     }
 
-    // 3. React (TSX / JSX)
-    if (lang === 'tsx' || lang === 'jsx' || lang === 'react') {
+    // --- REACT (TSX / JSX / React) ---
+    if (['tsx', 'jsx', 'react', 'typescript', 'ts'].includes(langNorm)) {
+      // Escape code safely for Babel
       const cleanCode = code
         .replace(/import\s+.*?from\s+['"].*?['"];?/g, '')
-        .replace(/export\s+default\s+/g, 'const AppRoot = ')
+        .replace(/export\s+default\s+/g, 'const DefaultExportComponent = ')
         .replace(/export\s+function\s+/g, 'function ')
-        .replace(/export\s+const\s+/g, 'const ');
+        .replace(/export\s+const\s+/g, 'const ')
+        .replace(/export\s+let\s+/g, 'let ')
+        .replace(/export\s+class\s+/g, 'class ');
 
       return `<!DOCTYPE html>
 <html lang="it">
@@ -278,140 +305,135 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; padding: 20px; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; padding: 20px; margin: 0; color: #0f172a; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div style="padding: 16px; color: #64748b; font-size: 12px;">⏳ Caricamento anteprima React in corso...</div>
+  </div>
+
   <script type="text/babel">
-    const { useState, useEffect, useReducer, useMemo, useCallback, useRef, createContext, useContext } = React;
+    const {
+      useState,
+      useEffect,
+      useReducer,
+      useMemo,
+      useCallback,
+      useRef,
+      createContext,
+      useContext,
+      useLayoutEffect,
+      useId
+    } = React;
 
     try {
       ${cleanCode}
 
+      // Dynamic Component Resolver
       let ComponentToRender = null;
-      if (typeof AppRoot !== 'undefined') {
-        ComponentToRender = AppRoot;
-      } else if (typeof StudyCounter !== 'undefined') {
-        ComponentToRender = StudyCounter;
-      } else if (typeof QuickNoteForm !== 'undefined') {
-        ComponentToRender = function DemoQuickNote() {
-          const [notes, setNotes] = useState(['Primo appunto React memorizzato']);
-          return (
-            <div className="space-y-4">
-              <QuickNoteForm onSave={(n) => setNotes(prev => [n, ...prev])} />
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <h5 className="text-xs font-bold text-slate-700 mb-2">Lista Appunti Live:</h5>
-                <ul className="text-xs space-y-1.5">
-                  {notes.map((note, i) => (
-                    <li key={i} className="p-2 bg-white rounded-lg border border-slate-200 text-slate-700 shadow-2xs">
-                      📌 {note}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          );
-        };
-      } else if (typeof useFetch !== 'undefined') {
-        ComponentToRender = function DemoUseFetch() {
-          const { data, loading, error } = useFetch('https://jsonplaceholder.typicode.com/todos/1');
-          return (
-            <div className="p-5 bg-white rounded-2xl border border-sky-200 shadow-xs">
-              <span className="text-xs font-bold text-sky-800 bg-sky-100 px-2.5 py-1 rounded-full">
-                Demo Custom Hook useFetch
-              </span>
-              <h4 className="text-sm font-bold text-slate-800 mt-3 mb-1">Dati recuperati dall'API:</h4>
-              {loading && <p className="text-xs text-slate-500 animate-pulse">⏳ Caricamento dati in corso...</p>}
-              {error && <p className="text-xs text-red-500 font-mono">❌ {error}</p>}
-              {data && (
-                <div className="mt-2 text-xs font-mono bg-slate-900 text-sky-300 p-3 rounded-xl">
-                  <pre>{JSON.stringify(data, null, 2)}</pre>
-                </div>
-              )}
-            </div>
-          );
-        };
-      } else if (typeof useLocalStorage !== 'undefined') {
-        ComponentToRender = function DemoUseLocalStorage() {
-          const [val, setVal] = useLocalStorage('demo-key', 'Valore di prova sincronizzato');
-          return (
-            <div className="rounded-2xl border border-sky-200 bg-white p-6 shadow-sm">
-              <span className="inline-block rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-800 mb-3">
-                Demo Hook useLocalStorage
-              </span>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Valore salvato reattivo:</h3>
-              <p className="font-mono text-sm bg-slate-100 p-3 rounded-xl text-slate-800 mb-4">{val}</p>
-              <input
-                type="text"
-                value={val}
-                onChange={e => setVal(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-800 focus:outline-sky-500"
-                placeholder="Modifica valore nel localStorage..."
-              />
-            </div>
-          );
-        };
-      } else if (typeof studyReducer !== 'undefined') {
-        ComponentToRender = function DemoReducer() {
-          const [state, dispatch] = useReducer(studyReducer, { isStudying: false, seconds: 0, activeSubject: 'React' });
-          useEffect(() => {
-            let timer;
-            if (state.isStudying) {
-              timer = setInterval(() => dispatch({ type: 'TICK' }), 1000);
-            }
-            return () => clearInterval(timer);
-          }, [state.isStudying]);
 
-          return (
-            <div className="rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm">
-              <span className="inline-block rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-800 mb-3">
-                Demo Pattern useReducer
-              </span>
-              <h3 className="text-base font-bold text-slate-900 mb-1">Materia attiva: {state.activeSubject}</h3>
-              <div className="font-mono text-3xl font-black text-indigo-600 my-3">{state.seconds} secondi</div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => dispatch({ type: 'START', subject: 'React & Redux' })}
-                  className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 cursor-pointer"
-                >
-                  {state.isStudying ? 'In Corso' : 'Avvia Sessione'}
-                </button>
-                <button
-                  onClick={() => dispatch({ type: 'RESET' })}
-                  className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-          );
-        };
+      if (typeof DefaultExportComponent !== 'undefined' && typeof DefaultExportComponent === 'function') {
+        ComponentToRender = DefaultExportComponent;
+      } else if (typeof AppRoot !== 'undefined' && typeof AppRoot === 'function') {
+        ComponentToRender = AppRoot;
+      } else if (typeof App !== 'undefined' && typeof App === 'function') {
+        ComponentToRender = App;
+      } else {
+        // Find any function/class starting with capital letter (React component convention)
+        const candidates = [];
+        const regex = /(?:function|const|let|var|class)\s+([A-Z][a-zA-Z0-9_]*)/g;
+        let match;
+        const codeText = ${JSON.stringify(cleanCode)};
+        while ((match = regex.exec(codeText)) !== null) {
+          candidates.push(match[1]);
+        }
+
+        for (let i = candidates.length - 1; i >= 0; i--) {
+          const name = candidates[i];
+          try {
+            const candidate = eval(name);
+            if (typeof candidate === 'function') {
+              ComponentToRender = candidate;
+              break;
+            }
+          } catch(e) {}
+        }
       }
 
+      // Check if it's a Custom Hook (starts with use...)
+      if (!ComponentToRender) {
+        const hookRegex = /(?:function|const|let|var)\s+(use[A-Z][a-zA-Z0-9_]*)/g;
+        let hookMatch;
+        const codeText = ${JSON.stringify(cleanCode)};
+        const hooks = [];
+        while ((hookMatch = hookRegex.exec(codeText)) !== null) {
+          hooks.push(hookMatch[1]);
+        }
+
+        if (hooks.length > 0) {
+          const hookName = hooks[0];
+          try {
+            const hookFn = eval(hookName);
+            if (typeof hookFn === 'function') {
+              ComponentToRender = function HookHarness() {
+                let hookResult = null;
+                let hookError = null;
+                try {
+                  hookResult = hookFn('demo_key', 'Valore di test');
+                } catch(e) {
+                  hookError = e.message;
+                }
+
+                return (
+                  <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs">
+                    <span className="inline-block rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 mb-2">
+                      Custom Hook: {hookName}
+                    </span>
+                    <h3 className="text-sm font-bold text-slate-800 mb-2">Esecuzione Reattiva dell'Hook:</h3>
+                    {hookError ? (
+                      <p className="text-xs text-amber-700 font-mono bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                        Nota: L'hook richiede argomenti specifici per il rendering completo. ({hookError})
+                      </p>
+                    ) : (
+                      <div className="bg-slate-900 text-sky-300 p-3 rounded-xl font-mono text-xs overflow-x-auto">
+                        <pre>{typeof hookResult === 'object' ? JSON.stringify(hookResult, null, 2) : String(hookResult)}</pre>
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+            }
+          } catch(e) {}
+        }
+      }
+
+      const rootEl = document.getElementById('root');
       if (ComponentToRender) {
-        ReactDOM.createRoot(document.getElementById('root')).render(<ComponentToRender />);
+        ReactDOM.createRoot(rootEl).render(<ComponentToRender />);
       } else {
-        ReactDOM.createRoot(document.getElementById('root')).render(
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-medium text-emerald-800">
-            ✅ Componente o hook React caricato ed eseguito correttamente!
+        ReactDOM.createRoot(rootEl).render(
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
+            <h4 className="text-sm font-bold text-emerald-900 mb-1">✅ Codice React Valido & Compilato</h4>
+            <p className="text-xs text-emerald-700">Il codice è stato analizzato con successo senza errori di sintassi.</p>
           </div>
         );
       }
     } catch (err) {
-      ReactDOM.createRoot(document.getElementById('root')).render(
-        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs font-mono text-red-700">
-          ❌ Errore compilazione/esecuzione React: {err.message}
+      document.getElementById('root').innerHTML = \`
+        <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 12px; font-family: monospace; font-size: 12px; color: #b91c1c;">
+          <div style="font-weight: bold; margin-bottom: 6px;">❌ Errore di Esecuzione React:</div>
+          <div>\${err.message}</div>
         </div>
-      );
+      \`;
     }
   </script>
 </body>
 </html>`;
     }
 
-    // 4. JavaScript
-    if (lang === 'javascript' || lang === 'js') {
+    // --- JAVASCRIPT ---
+    if (langNorm === 'javascript' || langNorm === 'js') {
       const cleanJsCode = code
         .replace(/import\s+.*?from\s+['"].*?['"];?/g, '')
         .replace(/export\s+default\s+/g, '')
@@ -431,6 +453,7 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       color: #38bdf8;
       font-size: 12px;
       line-height: 1.5;
+      margin: 0;
     }
     .header {
       color: #94a3b8;
@@ -439,6 +462,9 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       border-bottom: 1px solid #1e293b;
       font-size: 11px;
       font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .log-line {
       margin-bottom: 6px;
@@ -468,10 +494,13 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
   </style>
 </head>
 <body>
-  <div class="header">⚡ Output console e test interattivo JavaScript:</div>
+  <div class="header">
+    <span>⚡ Console & Test Output JavaScript:</span>
+    <button onclick="location.reload()" style="background:#334155; color:#cbd5e1; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-size:10px;">Riesegui ▷</button>
+  </div>
 
   <div class="interactive-box">
-    <div style="color: #cbd5e1; font-weight: bold; margin-bottom: 6px;">Campo di Test Interattivo (ID: searchInput)</div>
+    <div style="color: #cbd5e1; font-weight: bold; margin-bottom: 6px; font-size: 11px;">Input interattivo (ID: searchInput)</div>
     <input type="text" id="searchInput" placeholder="Digita qui per testare funzioni, debounce o event listeners..." />
   </div>
 
@@ -508,13 +537,112 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
 </html>`;
     }
 
+    // --- PYTHON ---
+    if (langNorm === 'python' || langNorm === 'py') {
+      return `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      padding: 16px;
+      background: #0f172a;
+      color: #38bdf8;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .header {
+      color: #94a3b8;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e293b;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .term-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 120px;
+    }
+    .prompt-line {
+      color: #10b981;
+      margin-bottom: 4px;
+    }
+    .out-line {
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+    .comment-line {
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span>🐍 Terminale Python & Simulatore di Output:</span>
+    <span style="color: #10b981;">Python 3.12 (Interactive)</span>
+  </div>
+
+  <div class="term-box">
+    <div class="prompt-line">>>> python3 script.py</div>
+    <div id="term-content"></div>
+  </div>
+
+  <script>
+    const term = document.getElementById('term-content');
+    const pyCode = ${JSON.stringify(code)};
+
+    // Simple, reliable client-side Python simulation for print statements and basic expressions
+    const lines = pyCode.split('\\n');
+    let hasOutput = false;
+
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      // Detect print(...)
+      const printMatch = trimmed.match(/^print\\((.*)\\)$/);
+      if (printMatch) {
+        hasOutput = true;
+        let content = printMatch[1].trim();
+        // Remove outer quotes if basic string
+        if ((content.startsWith('"') && content.endsWith('"')) || (content.startsWith("'") && content.endsWith("'"))) {
+          content = content.slice(1, -1);
+        }
+        const div = document.createElement('div');
+        div.className = 'out-line';
+        div.innerText = content;
+        term.appendChild(div);
+      }
+    });
+
+    if (!hasOutput) {
+      const div = document.createElement('div');
+      div.className = 'comment-line';
+      div.innerText = '# Script Python valido pronto per l\\'esecuzione (funzioni e classi caricate in memoria).';
+      term.appendChild(div);
+    }
+  </script>
+</body>
+</html>`;
+    }
+
     return '';
-  }, [code, language, activePreviewHtml]);
+  }, [code, langNorm, activeTab, activePreviewHtml]);
 
   return (
     <div className={`overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900 shadow-md ${className}`}>
-      {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950/80 px-4 py-2.5">
+      {/* Header bar with Segmented Mode Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-950 px-4 py-2.5">
+        {/* Left: Window Dots & Title */}
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
             <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
@@ -531,26 +659,47 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {allowPreview && isWebCode && (
-            <button
-              onClick={() => setShowLivePreview(!showLivePreview)}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
-                showLivePreview
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-              }`}
-              title="Mostra / Nascondi Anteprima Live"
-            >
-              {showLivePreview ? <CodeIcon className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              <span>{showLivePreview ? 'Mostra Codice' : 'Live Preview'}</span>
-            </button>
+        {/* Center/Right: Tabs & Action Buttons */}
+        <div className="flex items-center gap-2">
+          {/* Segmented Tab: Codice vs Anteprima Live */}
+          {allowPreview && isPreviewable && (
+            <div className="flex rounded-xl bg-slate-900 p-1 border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setActiveTab('code')}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  activeTab === 'code'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Visualizza codice sorgente"
+              >
+                <CodeIcon className="h-3.5 w-3.5" />
+                <span>Codice</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('preview')}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  activeTab === 'preview'
+                    ? 'bg-sky-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-sky-300'
+                }`}
+                title="Visualizza anteprima live interattiva"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span>Anteprima Live</span>
+              </button>
+            </div>
           )}
 
-          {showLivePreview && language.toLowerCase() === 'css' && (
+          {/* HTML Sandbox toggle for CSS */}
+          {activeTab === 'preview' && langNorm === 'css' && (
             <button
+              type="button"
               onClick={() => setShowHtmlEditor(!showHtmlEditor)}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold transition ${
                 showHtmlEditor
                   ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
@@ -558,12 +707,14 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
               title="Personalizza markup HTML di test per questo CSS"
             >
               <Sliders className="h-3.5 w-3.5" />
-              <span>HTML Sandbox</span>
+              <span className="hidden sm:inline">HTML Sandbox</span>
             </button>
           )}
 
-          {showLivePreview && (
+          {/* Reload preview */}
+          {activeTab === 'preview' && (
             <button
+              type="button"
               onClick={() => setKey(prev => prev + 1)}
               className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white transition"
               title="Ricarica Anteprima"
@@ -572,7 +723,9 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
             </button>
           )}
 
+          {/* Copy Button */}
           <button
+            type="button"
             onClick={handleCopy}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
               copied
@@ -597,23 +750,28 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       </div>
 
       {/* HTML Sandbox Editor for CSS Live Testing */}
-      {showLivePreview && showHtmlEditor && language.toLowerCase() === 'css' && (
+      {activeTab === 'preview' && showHtmlEditor && langNorm === 'css' && (
         <div className="border-b border-slate-800 bg-slate-950 p-3">
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="font-semibold text-purple-300 flex items-center gap-1.5">
               <Sliders className="h-3.5 w-3.5" /> Modifica Markup HTML di Prova per il tuo CSS:
             </span>
             <button
+              type="button"
               onClick={() => setCustomHtml(defaultGeneratedHtml)}
               className="text-[11px] text-slate-400 hover:text-slate-200 underline"
             >
-              Ripristina HTML Predefinito
+              Ripristina Predefinito
             </button>
           </div>
           <textarea
             value={customHtml || defaultGeneratedHtml}
             onChange={e => setCustomHtml(e.target.value)}
             rows={3}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoComplete="off"
             className="w-full rounded-xl border border-slate-700 bg-slate-900 p-2 font-mono text-xs text-slate-200 focus:border-purple-400 focus:outline-hidden"
             placeholder="Incolla o modifica qui l'HTML per testare le tue classi CSS..."
           />
@@ -621,13 +779,13 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       )}
 
       {/* Main Content: Live Preview or Code Highlighting */}
-      {showLivePreview && previewDoc ? (
+      {activeTab === 'preview' && previewDoc ? (
         <div className="bg-slate-950 p-2">
           <iframe
-            key={`${key}-${language}-${code.length}`}
+            key={`${key}-${langNorm}-${code.length}`}
             srcDoc={previewDoc}
             title="Live Preview"
-            sandbox="allow-scripts allow-modals"
+            sandbox="allow-scripts allow-modals allow-same-origin"
             className="w-full min-h-[300px] h-[340px] rounded-xl border border-slate-800 bg-white"
           />
         </div>

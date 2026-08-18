@@ -210,12 +210,9 @@ export const NotesManager: React.FC<NotesManagerProps> = ({ onOpenNewNoteModal }
                       </button>
 
                       <button
-                        onClick={() => {
-                          if (confirm(`Eliminare l'appunto "${note.title}"?`)) {
-                            deleteNote(note.id);
-                          }
-                        }}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => deleteNote(note.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 active:scale-95 transition"
+                        title="Elimina appunto"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

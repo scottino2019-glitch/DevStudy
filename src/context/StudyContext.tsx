@@ -90,75 +90,19 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed) {
-          // Default snippet IDs from INITIAL_DATA
-          const defaultSnippetMap = new Map<string, CodeSnippet>(
-            INITIAL_DATA.snippets.map(s => [s.id, s])
-          );
-
-          // Separate user-created snippets from default snippets
-          const userSnippets: CodeSnippet[] = [];
-          if (Array.isArray(parsed.snippets)) {
-            parsed.snippets.forEach((s: CodeSnippet) => {
-              if (!defaultSnippetMap.has(s.id)) {
-                // This is a custom snippet created by the user!
-                userSnippets.push(s);
-              }
-            });
-          }
-
-          // Combined: User custom snippets first, then latest refreshed default snippets
-          const mergedSnippets = [
-            ...userSnippets,
-            ...INITIAL_DATA.snippets,
-          ];
-
-          // Same for books
-          const defaultBookMap = new Map<string, ReferenceBook>(
-            INITIAL_DATA.books.map(b => [b.id, b])
-          );
-          const userBooks: ReferenceBook[] = [];
-          if (Array.isArray(parsed.books)) {
-            parsed.books.forEach((b: ReferenceBook) => {
-              if (!defaultBookMap.has(b.id)) {
-                userBooks.push(b);
-              }
-            });
-          }
-          const mergedBooks = [
-            ...userBooks,
-            ...INITIAL_DATA.books,
-          ];
-
-          // Same for tasks
-          const defaultTaskMap = new Map<string, StudyTask>(
-            INITIAL_DATA.tasks.map(t => [t.id, t])
-          );
-          const userTasks: StudyTask[] = [];
-          if (Array.isArray(parsed.tasks)) {
-            parsed.tasks.forEach((t: StudyTask) => {
-              if (!defaultTaskMap.has(t.id)) {
-                userTasks.push(t);
-              }
-            });
-          }
-          const mergedTasks = [
-            ...userTasks,
-            ...INITIAL_DATA.tasks,
-          ];
-
+        if (parsed && typeof parsed === 'object') {
           return {
             ...INITIAL_DATA,
             ...parsed,
-            snippets: mergedSnippets,
-            books: mergedBooks,
-            tasks: mergedTasks,
-            scheduleBlocks: Array.isArray(parsed.scheduleBlocks) && parsed.scheduleBlocks.length > 0
-              ? parsed.scheduleBlocks
-              : INITIAL_DATA.scheduleBlocks,
-            deadlines: Array.isArray(parsed.deadlines) && parsed.deadlines.length > 0
-              ? parsed.deadlines
-              : INITIAL_DATA.deadlines,
+            snippets: Array.isArray(parsed.snippets) ? parsed.snippets : INITIAL_DATA.snippets,
+            books: Array.isArray(parsed.books) ? parsed.books : INITIAL_DATA.books,
+            tasks: Array.isArray(parsed.tasks) ? parsed.tasks : INITIAL_DATA.tasks,
+            scheduleBlocks: Array.isArray(parsed.scheduleBlocks) ? parsed.scheduleBlocks : INITIAL_DATA.scheduleBlocks,
+            deadlines: Array.isArray(parsed.deadlines) ? parsed.deadlines : INITIAL_DATA.deadlines,
+            resources: Array.isArray(parsed.resources) ? parsed.resources : INITIAL_DATA.resources,
+            notes: Array.isArray(parsed.notes) ? parsed.notes : INITIAL_DATA.notes,
+            logs: Array.isArray(parsed.logs) ? parsed.logs : (INITIAL_DATA.logs || []),
+            dailyGoalMinutes: typeof parsed.dailyGoalMinutes === 'number' ? parsed.dailyGoalMinutes : INITIAL_DATA.dailyGoalMinutes,
           };
         }
       }
