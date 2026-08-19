@@ -13,6 +13,7 @@ import {
   Maximize2,
   ExternalLink
 } from 'lucide-react';
+import { ReactLiveRunner } from './ReactLiveRunner';
 
 export interface CodeViewerProps {
   code: string;
@@ -53,9 +54,7 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
 
   // Sync initialShowPreview when prop changes
   useEffect(() => {
-    if (initialShowPreview) {
-      setActiveTab('preview');
-    }
+    setActiveTab(initialShowPreview ? 'preview' : 'code');
   }, [initialShowPreview]);
 
   const handleCopy = async () => {
@@ -317,11 +316,18 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.4/babel.min.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; padding: 16px; margin: 0; color: #0f172a; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      padding: 16px;
+      margin: 0;
+      color: #0f172a;
+    }
   </style>
 </head>
 <body>
@@ -330,359 +336,335 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
   </div>
 
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const rootEl = document.getElementById('root');
+    (function() {
+      function runPreview() {
+        const rootEl = document.getElementById('root');
+        if (!rootEl) return;
 
-      try {
-        if (!window.Babel || !window.React || !window.ReactDOM) {
-          throw new Error("Librerie React o Babel non disponibili.");
-        }
-
-        const rawCode = ${JSON.stringify(code)};
-
-        // 1. Strip import statements and clean export keywords
-        let preparedCode = rawCode
-          .replace(/import\s+.*?from\s+['"].*?['"];?/g, '')
-          .replace(/import\s+['"].*?['"];?/g, '')
-          .replace(/export\s+default\s+/g, 'window.__DefaultExportComponent = ')
-          .replace(/export\s+function\s+/g, 'function ')
-          .replace(/export\s+const\s+/g, 'const ')
-          .replace(/export\s+let\s+/g, 'let ')
-          .replace(/export\s+class\s+/g, 'class ');
-
-        // 2. Transpile TSX / JSX / TypeScript with Babel
-        const transpiled = Babel.transform(preparedCode, {
-          presets: [
-            ['react', { runtime: 'classic' }],
-            ['typescript', { isTSX: true, allExtensions: true }]
-          ],
-          filename: 'snippet.tsx'
-        }).code;
-
-        // 3. Destructure standard React hooks
-        const {
-          useState,
-          useEffect,
-          useReducer,
-          useMemo,
-          useCallback,
-          useRef,
-          createContext,
-          useContext,
-          useLayoutEffect,
-          useId
-        } = React;
-
-        // 4. Helper to evaluate declared entities
-        function getDeclaredEntity(name) {
-          try {
-            const evalFn = new Function(
-              'React', 'ReactDOM', 'useState', 'useEffect', 'useReducer',
-              'useMemo', 'useCallback', 'useRef', 'createContext', 'useContext',
-              'useLayoutEffect', 'useId',
-              transpiled + '; return (typeof ' + name + ' !== "undefined" ? ' + name + ' : null);'
-            );
-            return evalFn(React, ReactDOM, useState, useEffect, useReducer, useMemo, useCallback, useRef, createContext, useContext, useLayoutEffect, useId);
-          } catch(e) {
-            return null;
+        try {
+          if (!window.React || !window.ReactDOM) {
+            throw new Error("Librerie React o ReactDOM non caricate.");
           }
-        }
-
-        // 5. Dynamic Detection
-        let ComponentToRender = null;
-
-        // Check for default export
-        if (typeof window.__DefaultExportComponent === 'function') {
-          ComponentToRender = window.__DefaultExportComponent;
-        }
-
-        // Check for named React components (PascalCase)
-        if (!ComponentToRender) {
-          const componentRegex = /(?:function|const|let|var|class)\s+([A-Z][a-zA-Z0-9_]*)/g;
-          let match;
-          const componentNames = [];
-          while ((match = componentRegex.exec(rawCode)) !== null) {
-            componentNames.push(match[1]);
+          if (!window.Babel) {
+            throw new Error("Compilatore Babel non caricato.");
           }
 
-          for (const name of componentNames) {
-            const ent = getDeclaredEntity(name);
-            if (typeof ent === 'function') {
-              const Comp = ent;
-              ComponentToRender = function ComponentHarness() {
-                const [actionLogs, setActionLogs] = useState([]);
-                const handleAction = (payload) => {
-                  const msg = typeof payload === 'string' ? payload : JSON.stringify(payload);
-                  setActionLogs(prev => [msg, ...prev.slice(0, 3)]);
-                };
+          const rawCode = ${JSON.stringify(code)};
 
-                return (
-                  <div className="space-y-4">
-                    <Comp 
-                      onSave={handleAction} 
-                      onSubmit={handleAction} 
-                      onClick={handleAction} 
-                      onChange={handleAction}
-                    />
-                    {actionLogs.length > 0 && (
-                      <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 max-w-sm">
-                        <div className="text-[11px] font-bold text-sky-900 mb-1">📡 Callback Intercettato:</div>
-                        <div className="space-y-1">
-                          {actionLogs.map((log, idx) => (
-                            <div key={idx} className="font-mono text-[11px] text-sky-800 bg-white/90 px-2 py-1 rounded border border-sky-100">
-                              {log}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              };
-              break;
-            }
+          // 1. Strip import statements and prepare exports
+          let preparedCode = rawCode
+            .replace(/import\\s+type\\s+[\\s\\S]*?from\\s+['"][^'"]+['"];?/g, '')
+            .replace(/import\\s+type\\s+[\\s\\S]*?;/g, '')
+            .replace(/import\\s+[\\s\\S]*?from\\s+['"][^'"]+['"];?/g, '')
+            .replace(/import\\s+['"][^'"]+['"];?/g, '')
+            .replace(/export\\s+default\\s+/g, 'window.__DefaultExport = ')
+            .replace(/export\\s+(?:async\\s+)?function\\s+/g, 'function ')
+            .replace(/export\\s+const\\s+/g, 'const ')
+            .replace(/export\\s+let\\s+/g, 'let ')
+            .replace(/export\\s+var\\s+/g, 'var ')
+            .replace(/export\\s+class\\s+/g, 'class ');
+
+          // 2. Transpile TSX / JSX / TypeScript with Babel
+          const transpiled = Babel.transform(preparedCode, {
+            presets: [
+              ['react', { runtime: 'classic' }],
+              ['typescript', { isTSX: true, allExtensions: true }]
+            ],
+            filename: 'snippet.tsx'
+          }).code;
+
+          // 3. Destructure standard React hooks & utilities
+          const {
+            useState,
+            useEffect,
+            useReducer,
+            useMemo,
+            useCallback,
+            useRef,
+            createContext,
+            useContext,
+            useLayoutEffect,
+            useId,
+            useTransition,
+            useDeferredValue
+          } = React;
+
+          // 4. Detect PascalCase components, hooks and reducers
+          const pascalRegex = /(?:function|const|let|var|class)\\s+([A-Z][a-zA-Z0-9_]*)/g;
+          const hookRegex = /(?:function|const|let|var)\\s+(use[A-Z][a-zA-Z0-9_]*)/g;
+          const reducerRegex = /(?:function|const|let|var)\\s+([a-zA-Z0-9_]*[rR]educer)/g;
+
+          const candidateNames = [];
+          let m;
+          while ((m = pascalRegex.exec(rawCode)) !== null) candidateNames.push(m[1]);
+          while ((m = hookRegex.exec(rawCode)) !== null) candidateNames.push(m[1]);
+          while ((m = reducerRegex.exec(rawCode)) !== null) candidateNames.push(m[1]);
+
+          // Probe code to extract declared variables from function scope
+          let probeCode = 'var __detected = {};\\n';
+          candidateNames.forEach(function(name) {
+            probeCode += 'try { if (typeof ' + name + ' !== "undefined") __detected["' + name + '"] = ' + name + '; } catch(e){}\\n';
+          });
+          probeCode += 'return { defaultExport: typeof window.__DefaultExport !== "undefined" ? window.__DefaultExport : null, detected: __detected };';
+
+          // 5. Evaluate transpiled snippet
+          const evalFn = new Function(
+            'React', 'ReactDOM', 'useState', 'useEffect', 'useReducer',
+            'useMemo', 'useCallback', 'useRef', 'createContext', 'useContext',
+            'useLayoutEffect', 'useId', 'useTransition', 'useDeferredValue',
+            transpiled + '\\n' + probeCode
+          );
+
+          const evalResult = evalFn(
+            React, ReactDOM, useState, useEffect, useReducer,
+            useMemo, useCallback, useRef, createContext, useContext,
+            useLayoutEffect, useId, useTransition, useDeferredValue
+          );
+
+          const defaultExport = evalResult ? evalResult.defaultExport : null;
+          const detected = (evalResult && evalResult.detected) ? evalResult.detected : {};
+
+          // 6. Determine ComponentToRender
+          let ComponentToRender = null;
+
+          // 6.1 Check if default export is a component
+          if (typeof defaultExport === 'function') {
+            ComponentToRender = defaultExport;
+          } else if (React.isValidElement(defaultExport)) {
+            ComponentToRender = function() { return defaultExport; };
           }
-        }
 
-        // Check for Custom Hooks (useXxx)
-        if (!ComponentToRender) {
-          const hookRegex = /(?:function|const|let|var)\s+(use[A-Z][a-zA-Z0-9_]*)/g;
-          let hookMatch;
-          const hookNames = [];
-          while ((hookMatch = hookRegex.exec(rawCode)) !== null) {
-            hookNames.push(hookMatch[1]);
-          }
+          // 6.2 Check detected PascalCase components
+          if (!ComponentToRender) {
+            for (let i = 0; i < candidateNames.length; i++) {
+              const name = candidateNames[i];
+              if (/^[A-Z]/.test(name) && typeof detected[name] === 'function') {
+                const TargetComp = detected[name];
+                ComponentToRender = function ComponentHarness() {
+                  const [actionLogs, setActionLogs] = useState([]);
+                  const handleAction = useCallback(function(payload) {
+                    const msg = typeof payload === 'string' ? payload : JSON.stringify(payload);
+                    setActionLogs(function(prev) { return [msg, ...prev.slice(0, 3)]; });
+                  }, []);
 
-          if (hookNames.length > 0) {
-            const hookName = hookNames[0];
-            const hookFn = getDeclaredEntity(hookName);
-
-            if (typeof hookFn === 'function') {
-              if (hookName === 'useLocalStorage') {
-                ComponentToRender = function UseLocalStorageDemo() {
-                  const [key, setKey] = useState('demo_study_key');
-                  const [val, setVal] = hookFn(key, 'Sessione React attiva');
-                  const [inputVal, setInputVal] = useState(val || '');
-
-                  return (
-                    <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800">
-                          Hook: {hookName}
-                        </span>
-                        <span className="text-[11px] text-emerald-600 font-bold">● Sincronizzato con LocalStorage</span>
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-800 mb-1">Test Interattivo useLocalStorage</h3>
-                      <p className="text-xs text-slate-500 mb-3">Modifica il valore per testare la persistenza reattiva.</p>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Valore memorizzato:</label>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              value={inputVal} 
-                              onChange={e => setInputVal(e.target.value)}
-                              className="flex-1 rounded-xl border border-slate-300 p-2 text-xs focus:ring-1 focus:ring-sky-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setVal(inputVal)}
-                              className="rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-500 transition shadow-xs"
-                            >
-                              Salva
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="rounded-xl bg-slate-900 text-sky-300 p-3 font-mono text-xs">
-                          <span className="text-slate-400">// Valore attuale nello state & localStorage:</span>
-                          <div className="mt-1 font-bold text-white">"{val}"</div>
-                        </div>
-                      </div>
-                    </div>
+                  return React.createElement('div', { className: 'space-y-4' },
+                    React.createElement(TargetComp, {
+                      onSave: handleAction,
+                      onSubmit: handleAction,
+                      onClick: handleAction,
+                      onChange: handleAction
+                    }),
+                    actionLogs.length > 0 ? React.createElement('div', { className: 'rounded-xl border border-sky-200 bg-sky-50/70 p-3 max-w-sm' },
+                      React.createElement('div', { className: 'text-[11px] font-bold text-sky-900 mb-1' }, '📡 Callback Intercettato:'),
+                      React.createElement('div', { className: 'space-y-1' },
+                        actionLogs.map(function(log, idx) {
+                          return React.createElement('div', {
+                            key: idx,
+                            className: 'font-mono text-[11px] text-sky-800 bg-white/90 px-2 py-1 rounded border border-sky-100'
+                          }, log);
+                        })
+                      )
+                    ) : null
                   );
                 };
-              } else if (hookName === 'useFetch') {
-                ComponentToRender = function UseFetchDemo() {
-                  const [url, setUrl] = useState('https://jsonplaceholder.typicode.com/todos/1');
-                  const { data, loading, error } = hookFn(url);
-
-                  return (
-                    <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800">
-                          Hook: {hookName}
-                        </span>
-                        {loading && <span className="text-[11px] text-sky-600 animate-pulse font-semibold">Caricamento in corso...</span>}
-                      </div>
-
-                      <h3 className="text-sm font-bold text-slate-800 mb-1">Test Interattivo useFetch</h3>
-                      <p className="text-xs text-slate-500 mb-2">Testa le chiamate asincrone con switch di endpoint:</p>
-                      <div className="flex gap-1.5 mb-3">
-                        <button 
-                          onClick={() => setUrl('https://jsonplaceholder.typicode.com/todos/1')}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50"
-                        >
-                          Todo 1
-                        </button>
-                        <button 
-                          onClick={() => setUrl('https://jsonplaceholder.typicode.com/todos/2')}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50"
-                        >
-                          Todo 2
-                        </button>
-                        <button 
-                          onClick={() => setUrl('https://jsonplaceholder.typicode.com/users/1')}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50"
-                        >
-                          User 1
-                        </button>
-                      </div>
-
-                      {error ? (
-                        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-                          Errore: {error}
-                        </div>
-                      ) : (
-                        <div className="rounded-xl bg-slate-900 p-3 font-mono text-xs text-sky-300 overflow-x-auto max-h-48">
-                          <pre>{JSON.stringify(data, null, 2)}</pre>
-                        </div>
-                      )}
-                    </div>
-                  );
-                };
-              } else {
-                // Generic Custom Hook Harness
-                ComponentToRender = function GenericHookHarness() {
-                  let hookResult = null;
-                  let hookError = null;
-                  try {
-                    hookResult = hookFn('test_key', 0);
-                  } catch(e) {
-                    hookError = e.message;
-                  }
-
-                  return (
-                    <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md">
-                      <span className="inline-block rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 mb-2">
-                        Custom Hook: {hookName}
-                      </span>
-                      <h3 className="text-sm font-bold text-slate-800 mb-2">Esecuzione Reattiva dell'Hook</h3>
-                      {hookError ? (
-                        <p className="text-xs text-amber-700 font-mono bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                          Hook compilato con successo. ({hookError})
-                        </p>
-                      ) : (
-                        <div className="bg-slate-900 text-sky-300 p-3 rounded-xl font-mono text-xs overflow-x-auto">
-                          <pre>{typeof hookResult === 'object' ? JSON.stringify(hookResult, null, 2) : String(hookResult)}</pre>
-                        </div>
-                      )}
-                    </div>
-                  );
-                };
+                break;
               }
             }
           }
-        }
 
-        // Check for Reducers (studyReducer, etc.)
-        if (!ComponentToRender) {
-          const reducerRegex = /(?:function|const|let|var)\s+([a-zA-Z0-9_]*[rR]educer)/g;
-          let redMatch;
-          const redNames = [];
-          while ((redMatch = reducerRegex.exec(rawCode)) !== null) {
-            redNames.push(redMatch[1]);
-          }
+          // 6.3 Check detected Custom Hooks (if no demo component was found)
+          if (!ComponentToRender) {
+            for (let i = 0; i < candidateNames.length; i++) {
+              const hookName = candidateNames[i];
+              if (/^use[A-Z]/.test(hookName) && typeof detected[hookName] === 'function') {
+                const hookFn = detected[hookName];
 
-          if (redNames.length > 0) {
-            const redName = redNames[0];
-            const redFn = getDeclaredEntity(redName);
+                if (hookName === 'useLocalStorage') {
+                  ComponentToRender = function UseLocalStorageDemo() {
+                    const [key] = useState('demo_study_key');
+                    const hookResult = hookFn(key, 'Mario');
+                    const val = hookResult[0];
+                    const setVal = hookResult[1];
+                    const [inputVal, setInputVal] = useState(val || '');
 
-            if (typeof redFn === 'function') {
-              ComponentToRender = function ReducerHarness() {
-                const initialState = { isStudying: false, seconds: 0, activeSubject: 'React & TypeScript' };
-                const [state, dispatch] = useReducer(redFn, initialState);
+                    return React.createElement('div', { className: 'rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md space-y-3' },
+                      React.createElement('div', { className: 'flex items-center justify-between mb-1' },
+                        React.createElement('span', { className: 'rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800' }, 'Hook: ' + hookName),
+                        React.createElement('span', { className: 'text-[11px] text-emerald-600 font-bold' }, '● Sincronizzato con LocalStorage')
+                      ),
+                      React.createElement('h3', { className: 'text-sm font-bold text-slate-800' }, 'Test Interattivo useLocalStorage'),
+                      React.createElement('p', { className: 'text-xs text-slate-500' }, 'Modifica il valore per testare la persistenza reattiva.'),
+                      React.createElement('div', { className: 'space-y-2' },
+                        React.createElement('label', { className: 'block text-[11px] font-semibold text-slate-600' }, 'Valore memorizzato:'),
+                        React.createElement('div', { className: 'flex gap-2' },
+                          React.createElement('input', {
+                            type: 'text',
+                            value: inputVal,
+                            onChange: function(e) { setInputVal(e.target.value); },
+                            className: 'flex-1 rounded-xl border border-slate-300 p-2 text-xs focus:ring-1 focus:ring-sky-500'
+                          }),
+                          React.createElement('button', {
+                            type: 'button',
+                            onClick: function() { setVal(inputVal); },
+                            className: 'rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-500 transition shadow-xs'
+                          }, 'Salva')
+                        )
+                      ),
+                      React.createElement('div', { className: 'rounded-xl bg-slate-900 text-sky-300 p-3 font-mono text-xs' },
+                        React.createElement('div', { className: 'text-slate-400 text-[11px] mb-1' }, '// Valore attuale in localStorage ("' + key + '"):'),
+                        React.createElement('div', { className: 'font-bold text-white' }, JSON.stringify(val))
+                      )
+                    );
+                  };
+                } else if (hookName === 'useFetch') {
+                  ComponentToRender = function UseFetchDemo() {
+                    const [url, setUrl] = useState('https://jsonplaceholder.typicode.com/todos/1');
+                    const fetchRes = hookFn(url) || {};
+                    const data = fetchRes.data;
+                    const loading = fetchRes.loading;
+                    const error = fetchRes.error;
 
-                useEffect(() => {
-                  let timer;
-                  if (state.isStudying) {
-                    timer = setInterval(() => {
-                      dispatch({ type: 'TICK' });
-                    }, 1000);
-                  }
-                  return () => clearInterval(timer);
-                }, [state.isStudying]);
+                    return React.createElement('div', { className: 'rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md space-y-3' },
+                      React.createElement('div', { className: 'flex items-center justify-between mb-1' },
+                        React.createElement('span', { className: 'rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800' }, 'Hook: ' + hookName),
+                        loading ? React.createElement('span', { className: 'text-[11px] text-sky-600 animate-pulse font-semibold' }, 'Caricamento in corso...') : null
+                      ),
+                      React.createElement('h3', { className: 'text-sm font-bold text-slate-800' }, 'Test Interattivo useFetch'),
+                      React.createElement('p', { className: 'text-xs text-slate-500' }, 'Testa le chiamate asincrone con switch di endpoint:'),
+                      React.createElement('div', { className: 'flex gap-1.5' },
+                        React.createElement('button', {
+                          type: 'button',
+                          onClick: function() { setUrl('https://jsonplaceholder.typicode.com/todos/1'); },
+                          className: 'rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50'
+                        }, 'Todo 1'),
+                        React.createElement('button', {
+                          type: 'button',
+                          onClick: function() { setUrl('https://jsonplaceholder.typicode.com/todos/2'); },
+                          className: 'rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50'
+                        }, 'Todo 2'),
+                        React.createElement('button', {
+                          type: 'button',
+                          onClick: function() { setUrl('https://jsonplaceholder.typicode.com/users/1'); },
+                          className: 'rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50'
+                        }, 'User 1')
+                      ),
+                      error ? React.createElement('div', { className: 'rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700' }, 'Errore: ' + error)
+                            : React.createElement('div', { className: 'rounded-xl bg-slate-900 p-3 font-mono text-xs text-sky-300 overflow-x-auto max-h-48' },
+                                React.createElement('pre', null, JSON.stringify(data, null, 2))
+                              )
+                    );
+                  };
+                } else {
+                  ComponentToRender = function GenericHookHarness() {
+                    let hookResult = null;
+                    let hookError = null;
+                    try {
+                      hookResult = hookFn('test_param', 0);
+                    } catch(e) {
+                      hookError = e.message;
+                    }
 
-                return (
-                  <div className="rounded-2xl border border-purple-200 bg-white p-5 shadow-xs max-w-md">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-800">
-                        Reducer: {redName}
-                      </span>
-                      <span className={"text-[11px] font-bold " + (state.isStudying ? "text-emerald-600 animate-pulse" : "text-slate-400")}>
-                        {state.isStudying ? '● In esecuzione (TICK)' : '○ In pausa'}
-                      </span>
-                    </div>
-
-                    <h3 className="text-sm font-bold text-slate-800 mb-2">Test Live del Reducer</h3>
-                    
-                    <div className="rounded-xl bg-slate-900 p-3 font-mono text-xs text-purple-300 mb-4 overflow-x-auto">
-                      <div className="text-slate-500 mb-1">// Stato attuale:</div>
-                      <pre className="text-white font-bold">{JSON.stringify(state, null, 2)}</pre>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: 'START', subject: 'React Hooks & State' })}
-                        className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-500 active:scale-95 transition"
-                      >
-                        Dispatch: START
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: 'TICK' })}
-                        className="rounded-xl border border-purple-300 px-3 py-1.5 text-xs font-bold text-purple-700 hover:bg-purple-50 active:scale-95 transition"
-                      >
-                        Dispatch: TICK (+1)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: 'RESET' })}
-                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
-                      >
-                        Dispatch: RESET
-                      </button>
-                    </div>
-                  </div>
-                );
-              };
+                    return React.createElement('div', { className: 'rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md' },
+                      React.createElement('span', { className: 'inline-block rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 mb-2' }, 'Custom Hook: ' + hookName),
+                      React.createElement('h3', { className: 'text-sm font-bold text-slate-800 mb-2' }, 'Esecuzione Reattiva dell\\'Hook'),
+                      hookError ? React.createElement('p', { className: 'text-xs text-amber-700 font-mono bg-amber-50 p-2.5 rounded-xl border border-amber-200' }, 'Hook compilato con successo. (' + hookError + ')')
+                                : React.createElement('div', { className: 'bg-slate-900 text-sky-300 p-3 rounded-xl font-mono text-xs overflow-x-auto' },
+                                    React.createElement('pre', null, typeof hookResult === 'object' ? JSON.stringify(hookResult, null, 2) : String(hookResult))
+                                  )
+                    );
+                  };
+                }
+                break;
+              }
             }
           }
-        }
 
-        // Render to Root
-        if (ComponentToRender) {
-          ReactDOM.createRoot(rootEl).render(React.createElement(ComponentToRender));
-        } else {
-          ReactDOM.createRoot(rootEl).render(
-            React.createElement('div', { className: 'rounded-2xl bg-emerald-50 border border-emerald-200 p-5' }, [
-              React.createElement('h4', { className: 'text-sm font-bold text-emerald-900 mb-1', key: 'h4' }, '✅ Codice React Compilato con Successo'),
-              React.createElement('p', { className: 'text-xs text-emerald-700', key: 'p' }, 'Sintassi TSX e tipi verificati senza errori.')
-            ])
-          );
-        }
+          // 6.4 Check detected Reducers
+          if (!ComponentToRender) {
+            for (let i = 0; i < candidateNames.length; i++) {
+              const redName = candidateNames[i];
+              if (/[rR]educer$/.test(redName) && typeof detected[redName] === 'function') {
+                const redFn = detected[redName];
+                ComponentToRender = function ReducerHarness() {
+                  const initialState = { isStudying: false, seconds: 0, activeSubject: 'React & TypeScript' };
+                  const [state, dispatch] = useReducer(redFn, initialState);
 
-      } catch (err) {
-        rootEl.innerHTML = \`
-          <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 12px; font-family: monospace; font-size: 12px; color: #b91c1c;">
-            <div style="font-weight: bold; margin-bottom: 6px;">❌ Errore di Compilazione / Esecuzione React:</div>
-            <div>\${err.message}</div>
-          </div>
-        \`;
+                  useEffect(function() {
+                    let timer;
+                    if (state.isStudying) {
+                      timer = setInterval(function() {
+                        dispatch({ type: 'TICK' });
+                      }, 1000);
+                    }
+                    return function() { clearInterval(timer); };
+                  }, [state.isStudying]);
+
+                  return React.createElement('div', { className: 'rounded-2xl border border-purple-200 bg-white p-5 shadow-xs max-w-md space-y-3' },
+                    React.createElement('div', { className: 'flex items-center justify-between mb-1' },
+                      React.createElement('span', { className: 'rounded-full bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-800' }, 'Reducer: ' + redName),
+                      React.createElement('span', { className: 'text-[11px] font-bold ' + (state.isStudying ? 'text-emerald-600 animate-pulse' : 'text-slate-400') },
+                        state.isStudying ? '● In esecuzione (TICK)' : '○ In pausa'
+                      )
+                    ),
+                    React.createElement('h3', { className: 'text-sm font-bold text-slate-800' }, 'Test Live del Reducer'),
+                    React.createElement('div', { className: 'rounded-xl bg-slate-900 p-3 font-mono text-xs text-purple-300 overflow-x-auto' },
+                      React.createElement('div', { className: 'text-slate-500 mb-1' }, '// Stato attuale:'),
+                      React.createElement('pre', { className: 'text-white font-bold' }, JSON.stringify(state, null, 2))
+                    ),
+                    React.createElement('div', { className: 'flex flex-wrap gap-2 pt-1' },
+                      React.createElement('button', {
+                        type: 'button',
+                        onClick: function() { dispatch({ type: 'START', subject: 'React Hooks & State' }); },
+                        className: 'rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-500 active:scale-95 transition shadow-xs'
+                      }, 'Dispatch: START'),
+                      React.createElement('button', {
+                        type: 'button',
+                        onClick: function() { dispatch({ type: 'TICK' }); },
+                        className: 'rounded-xl border border-purple-300 px-3 py-1.5 text-xs font-bold text-purple-700 hover:bg-purple-50 active:scale-95 transition'
+                      }, 'Dispatch: TICK (+1)'),
+                      React.createElement('button', {
+                        type: 'button',
+                        onClick: function() { dispatch({ type: 'RESET' }); },
+                        className: 'rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition'
+                      }, 'Dispatch: RESET')
+                    )
+                  );
+                };
+                break;
+              }
+            }
+          }
+
+          // 7. Render to Root
+          if (ComponentToRender) {
+            ReactDOM.createRoot(rootEl).render(React.createElement(ComponentToRender));
+          } else {
+            ReactDOM.createRoot(rootEl).render(
+              React.createElement('div', { className: 'rounded-2xl bg-emerald-50 border border-emerald-200 p-5' },
+                React.createElement('h4', { className: 'text-sm font-bold text-emerald-900 mb-1' }, '✅ Codice React Compilato con Successo'),
+                React.createElement('p', { className: 'text-xs text-emerald-700' }, 'Sintassi TSX e tipi verificati senza errori.')
+              )
+            );
+          }
+
+        } catch (err) {
+          const rootEl = document.getElementById('root');
+          if (rootEl) {
+            rootEl.innerHTML = '<div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 12px; font-family: monospace; font-size: 12px; color: #b91c1c;">' +
+              '<div style="font-weight: bold; margin-bottom: 6px;">❌ Errore di Compilazione / Esecuzione React:</div>' +
+              '<div>' + (err && err.message ? err.message : String(err)) + '</div>' +
+              '</div>';
+          }
+        }
       }
-    });
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        runPreview();
+      } else {
+        window.addEventListener('DOMContentLoaded', runPreview);
+        window.addEventListener('load', runPreview);
+      }
+    })();
   </script>
 </body>
 </html>`;
@@ -1064,7 +1046,13 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       )}
 
       {/* Main Content: Live Preview or Code Highlighting */}
-      {activeTab === 'preview' && previewDoc ? (
+      {activeTab === 'preview' && ['tsx', 'jsx', 'react', 'typescript', 'ts'].includes(langNorm) ? (
+        <div className="bg-slate-950 p-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 sm:p-6 shadow-inner">
+            <ReactLiveRunner code={code} keyTrigger={key} />
+          </div>
+        </div>
+      ) : activeTab === 'preview' && previewDoc ? (
         <div className="bg-slate-950 p-2">
           <iframe
             key={`${key}-${langNorm}-${code.length}`}
