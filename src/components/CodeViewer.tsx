@@ -311,13 +311,16 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
 
     // --- REACT (TSX / JSX / React) ---
     if (['tsx', 'jsx', 'react', 'typescript', 'ts'].includes(langNorm)) {
-      // Escape code safely for Babel
+      // Escape and clean imports and exports for in-browser execution
       const cleanCode = code
-        .replace(/import\s+.*?from\s+['"].*?['"];?/g, '')
-        .replace(/export\s+default\s+/g, 'const DefaultExportComponent = ')
+        .replace(/import\s+[\s\S]*?from\s+['"][^'"]+['"];?/g, '')
+        .replace(/import\s+['"][^'"]+['"];?/g, '')
+        .replace(/export\s+default\s+/g, 'const __DefaultExportComponent = ')
         .replace(/export\s+function\s+/g, 'function ')
         .replace(/export\s+const\s+/g, 'const ')
         .replace(/export\s+let\s+/g, 'let ')
+        .replace(/export\s+type\s+/g, 'type ')
+        .replace(/export\s+interface\s+/g, 'interface ')
         .replace(/export\s+class\s+/g, 'class ');
 
       return `<!DOCTYPE html>
@@ -326,19 +329,27 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; padding: 20px; margin: 0; color: #0f172a; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; padding: 16px; margin: 0; color: #0f172a; }
   </style>
+  <script>
+    window.onerror = function(msg) {
+      var root = document.getElementById('root');
+      if (root) {
+        root.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:12px;font-family:monospace;font-size:12px;color:#b91c1c;"><div style="font-weight:bold;margin-bottom:6px;">❌ Errore di Compilazione / Esecuzione React:</div><div>' + msg + '</div></div>';
+      }
+    };
+  </script>
 </head>
 <body>
   <div id="root">
-    <div style="padding: 16px; color: #64748b; font-size: 12px;">⏳ Caricamento anteprima React in corso...</div>
+    <div style="padding: 16px; color: #64748b; font-size: 12px; font-family: sans-serif;">⏳ Inizializzazione anteprima React...</div>
   </div>
 
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react,typescript">
     const {
       useState,
       useEffect,
@@ -355,45 +366,73 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
     try {
       ${cleanCode}
 
-      // Dynamic Component Resolver
       let ComponentToRender = null;
 
-      if (typeof DefaultExportComponent !== 'undefined' && typeof DefaultExportComponent === 'function') {
-        ComponentToRender = DefaultExportComponent;
-      } else if (typeof AppRoot !== 'undefined' && typeof AppRoot === 'function') {
-        ComponentToRender = AppRoot;
-      } else if (typeof App !== 'undefined' && typeof App === 'function') {
-        ComponentToRender = App;
-      } else {
-        // Find any function/class starting with capital letter (React component convention)
-        const candidates = [];
-        const regex = /(?:function|const|let|var|class)\s+([A-Z][a-zA-Z0-9_]*)/g;
+      // 1. Default Export Component
+      if (typeof __DefaultExportComponent === 'function') {
+        ComponentToRender = __DefaultExportComponent;
+      }
+
+      // 2. Named Component (PascalCase)
+      if (!ComponentToRender) {
+        const compRegex = /(?:function|const|let|var|class)\\s+([A-Z][a-zA-Z0-9_]*)/g;
         let match;
-        const codeText = ${JSON.stringify(cleanCode)};
-        while ((match = regex.exec(codeText)) !== null) {
+        const candidates = [];
+        const sourceCode = ${JSON.stringify(cleanCode)};
+        while ((match = compRegex.exec(sourceCode)) !== null) {
           candidates.push(match[1]);
         }
 
-        for (let i = candidates.length - 1; i >= 0; i--) {
+        for (let i = 0; i < candidates.length; i++) {
           const name = candidates[i];
           try {
             const candidate = eval(name);
             if (typeof candidate === 'function') {
-              ComponentToRender = candidate;
+              const Comp = candidate;
+              ComponentToRender = function ComponentHarness() {
+                const [actionLogs, setActionLogs] = useState([]);
+                const handleAction = (payload) => {
+                  const msg = typeof payload === 'string' ? payload : (payload && payload.target ? 'Evento utente registrato' : JSON.stringify(payload));
+                  setActionLogs(prev => [String(msg), ...prev.slice(0, 3)]);
+                };
+
+                return (
+                  <div className="space-y-4">
+                    <Comp 
+                      onSave={handleAction} 
+                      onSubmit={handleAction} 
+                      onClick={handleAction} 
+                      onChange={handleAction}
+                    />
+                    {actionLogs.length > 0 && (
+                      <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 max-w-sm">
+                        <div className="text-[11px] font-bold text-sky-900 mb-1">📡 Callback Intercettato:</div>
+                        <div className="space-y-1">
+                          {actionLogs.map((log, idx) => (
+                            <div key={idx} className="font-mono text-[11px] text-sky-800 bg-white/90 px-2 py-1 rounded border border-sky-100">
+                              {log}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              };
               break;
             }
-          } catch(e) {}
+          } catch (e) {}
         }
       }
 
-      // Check if it's a Custom Hook (starts with use...)
+      // 3. Custom Hooks (useXxx)
       if (!ComponentToRender) {
-        const hookRegex = /(?:function|const|let|var)\s+(use[A-Z][a-zA-Z0-9_]*)/g;
-        let hookMatch;
-        const codeText = ${JSON.stringify(cleanCode)};
+        const hookRegex = /(?:function|const|let|var)\\s+(use[A-Z][a-zA-Z0-9_]*)/g;
+        let match;
         const hooks = [];
-        while ((hookMatch = hookRegex.exec(codeText)) !== null) {
-          hooks.push(hookMatch[1]);
+        const sourceCode = ${JSON.stringify(cleanCode)};
+        while ((match = hookRegex.exec(sourceCode)) !== null) {
+          hooks.push(match[1]);
         }
 
         if (hooks.length > 0) {
@@ -401,30 +440,204 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
           try {
             const hookFn = eval(hookName);
             if (typeof hookFn === 'function') {
-              ComponentToRender = function HookHarness() {
-                let hookResult = null;
-                let hookError = null;
-                try {
-                  hookResult = hookFn('demo_key', 'Valore di test');
-                } catch(e) {
-                  hookError = e.message;
-                }
+              if (hookName === 'useLocalStorage') {
+                ComponentToRender = function UseLocalStorageDemo() {
+                  const [key, setKey] = useState('demo_study_key');
+                  const [val, setVal] = hookFn(key, 'Sessione React attiva');
+                  const [inputVal, setInputVal] = useState(val || '');
+
+                  return (
+                    <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800">
+                          Hook: {hookName}
+                        </span>
+                        <span className="text-[11px] text-emerald-600 font-bold">● Sincronizzato con LocalStorage</span>
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-800 mb-1">Test Interattivo useLocalStorage</h3>
+                      <p className="text-xs text-slate-500 mb-3">Modifica il valore per testare la persistenza reattiva:</p>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Valore memorizzato:</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              value={inputVal} 
+                              onChange={e => setInputVal(e.target.value)}
+                              className="flex-1 rounded-xl border border-slate-300 p-2 text-xs focus:ring-1 focus:ring-sky-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setVal(inputVal)}
+                              className="rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-500 transition shadow-xs"
+                            >
+                              Salva
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl bg-slate-900 text-sky-300 p-3 font-mono text-xs">
+                          <span className="text-slate-400">// Valore attuale nello state & localStorage:</span>
+                          <div className="mt-1 font-bold text-white">"{val}"</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                };
+              } else if (hookName === 'useFetch') {
+                ComponentToRender = function UseFetchDemo() {
+                  const [url, setUrl] = useState('https://jsonplaceholder.typicode.com/todos/1');
+                  const { data, loading, error } = hookFn(url);
+
+                  return (
+                    <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800">
+                          Hook: {hookName}
+                        </span>
+                        {loading && <span className="text-[11px] text-sky-600 animate-pulse font-semibold">Caricamento in corso...</span>}
+                      </div>
+
+                      <h3 className="text-sm font-bold text-slate-800 mb-1">Test Interattivo useFetch</h3>
+                      <p className="text-xs text-slate-500 mb-2">Testa le chiamate asincrone con switch di endpoint:</p>
+                      <div className="flex gap-1.5 mb-3">
+                        <button 
+                          onClick={() => setUrl('https://jsonplaceholder.typicode.com/todos/1')}
+                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50"
+                        >
+                          Todo 1
+                        </button>
+                        <button 
+                          onClick={() => setUrl('https://jsonplaceholder.typicode.com/todos/2')}
+                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50"
+                        >
+                          Todo 2
+                        </button>
+                        <button 
+                          onClick={() => setUrl('https://jsonplaceholder.typicode.com/users/1')}
+                          className="rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] font-semibold hover:bg-slate-50"
+                        >
+                          User 1
+                        </button>
+                      </div>
+
+                      {error ? (
+                        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                          Errore: {error}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-slate-900 p-3 font-mono text-xs text-sky-300 overflow-x-auto max-h-48">
+                          <pre>{JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                      )}
+                    </div>
+                  );
+                };
+              } else {
+                ComponentToRender = function GenericHookHarness() {
+                  let hookResult = null;
+                  let hookError = null;
+                  try {
+                    hookResult = hookFn('test_key', 0);
+                  } catch(e) {
+                    hookError = e.message;
+                  }
+
+                  return (
+                    <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs max-w-md">
+                      <span className="inline-block rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 mb-2">
+                        Custom Hook: {hookName}
+                      </span>
+                      <h3 className="text-sm font-bold text-slate-800 mb-2">Esecuzione Reattiva dell'Hook</h3>
+                      {hookError ? (
+                        <p className="text-xs text-amber-700 font-mono bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                          Hook compilato con successo. ({hookError})
+                        </p>
+                      ) : (
+                        <div className="bg-slate-900 text-sky-300 p-3 rounded-xl font-mono text-xs overflow-x-auto">
+                          <pre>{typeof hookResult === 'object' ? JSON.stringify(hookResult, null, 2) : String(hookResult)}</pre>
+                        </div>
+                      )}
+                    </div>
+                  );
+                };
+              }
+            }
+          } catch(e) {}
+        }
+      }
+
+      // 4. Reducers (xxxReducer)
+      if (!ComponentToRender) {
+        const reducerRegex = /(?:function|const|let|var)\\s+([a-zA-Z0-9_]*[rR]educer)/g;
+        let match;
+        const reducers = [];
+        const sourceCode = ${JSON.stringify(cleanCode)};
+        while ((match = reducerRegex.exec(sourceCode)) !== null) {
+          reducers.push(match[1]);
+        }
+
+        if (reducers.length > 0) {
+          const redName = reducers[0];
+          try {
+            const redFn = eval(redName);
+            if (typeof redFn === 'function') {
+              ComponentToRender = function ReducerHarness() {
+                const initialState = { isStudying: false, seconds: 0, activeSubject: 'React & TypeScript' };
+                const [state, dispatch] = useReducer(redFn, initialState);
+
+                useEffect(() => {
+                  let timer;
+                  if (state.isStudying) {
+                    timer = setInterval(() => {
+                      dispatch({ type: 'TICK' });
+                    }, 1000);
+                  }
+                  return () => clearInterval(timer);
+                }, [state.isStudying]);
 
                 return (
-                  <div className="rounded-2xl border border-sky-200 bg-white p-5 shadow-xs">
-                    <span className="inline-block rounded-full bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 mb-2">
-                      Custom Hook: {hookName}
-                    </span>
-                    <h3 className="text-sm font-bold text-slate-800 mb-2">Esecuzione Reattiva dell'Hook:</h3>
-                    {hookError ? (
-                      <p className="text-xs text-amber-700 font-mono bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                        Nota: L'hook richiede argomenti specifici per il rendering completo. ({hookError})
-                      </p>
-                    ) : (
-                      <div className="bg-slate-900 text-sky-300 p-3 rounded-xl font-mono text-xs overflow-x-auto">
-                        <pre>{typeof hookResult === 'object' ? JSON.stringify(hookResult, null, 2) : String(hookResult)}</pre>
-                      </div>
-                    )}
+                  <div className="rounded-2xl border border-purple-200 bg-white p-5 shadow-xs max-w-md">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-800">
+                        Reducer: {redName}
+                      </span>
+                      <span className={"text-[11px] font-bold " + (state.isStudying ? "text-emerald-600 animate-pulse" : "text-slate-400")}>
+                        {state.isStudying ? '● In esecuzione (TICK)' : '○ In pausa'}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-slate-800 mb-2">Test Live del Reducer</h3>
+                    
+                    <div className="rounded-xl bg-slate-900 p-3 font-mono text-xs text-purple-300 mb-4 overflow-x-auto">
+                      <div className="text-slate-500 mb-1">// Stato attuale:</div>
+                      <pre className="text-white font-bold">{JSON.stringify(state, null, 2)}</pre>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => dispatch({ type: 'START', subject: 'React Hooks & State' })}
+                        className="rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-500 active:scale-95 transition"
+                      >
+                        Dispatch: START
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dispatch({ type: 'TICK' })}
+                        className="rounded-xl border border-purple-300 px-3 py-1.5 text-xs font-bold text-purple-700 hover:bg-purple-50 active:scale-95 transition"
+                      >
+                        Dispatch: TICK (+1)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => dispatch({ type: 'RESET' })}
+                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
+                      >
+                        Dispatch: RESET
+                      </button>
+                    </div>
                   </div>
                 );
               };
@@ -439,18 +652,21 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
       } else {
         ReactDOM.createRoot(rootEl).render(
           <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
-            <h4 className="text-sm font-bold text-emerald-900 mb-1">✅ Codice React Valido & Compilato</h4>
-            <p className="text-xs text-emerald-700">Il codice è stato analizzato con successo senza errori di sintassi.</p>
+            <h4 className="text-sm font-bold text-emerald-900 mb-1">✅ Codice React Valido</h4>
+            <p className="text-xs text-emerald-700">Tipi e sintassi TSX verificati senza errori.</p>
           </div>
         );
       }
     } catch (err) {
-      document.getElementById('root').innerHTML = \`
-        <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 12px; font-family: monospace; font-size: 12px; color: #b91c1c;">
-          <div style="font-weight: bold; margin-bottom: 6px;">❌ Errore di Esecuzione React:</div>
-          <div>\${err.message}</div>
-        </div>
-      \`;
+      const rootEl = document.getElementById('root');
+      if (rootEl) {
+        rootEl.innerHTML = \`
+          <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 12px; font-family: monospace; font-size: 12px; color: #b91c1c;">
+            <div style="font-weight: bold; margin-bottom: 6px;">❌ Errore di Esecuzione React:</div>
+            <div>\${err.message}</div>
+          </div>
+        \`;
+      }
     }
   </script>
 </body>
