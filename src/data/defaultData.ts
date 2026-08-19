@@ -518,6 +518,7 @@ Promise.allSettled([taskA, taskB, taskC]).then(results => {
       createdAt: '2026-08-11T18:00:00.000Z',
       updatedAt: '2026-08-11T18:00:00.000Z',
     },
+
     // --- React ---
     {
       id: 'snip-react-1',
@@ -526,14 +527,12 @@ Promise.allSettled([taskA, taskB, taskC]).then(results => {
       description: 'Componente React interattivo con controlli di incremento, decremento e stato condizionale.',
       language: 'tsx',
       tags: ['useState', 'Componente', 'Interattività'],
-      code: `import React, { useState } from 'react';
-
-function StudyCounter() {
+      code: `function StudyCounter() {
   const [count, setCount] = useState(0);
   const [goal, setGoal] = useState(5);
 
   return (
-    <div className="rounded-2xl border border-sky-200 bg-white p-6 shadow-sm max-w-md font-sans">
+    <div className="rounded-2xl border border-sky-200 bg-white p-6 shadow-sm max-w-md">
       <div className="flex items-center justify-between mb-4">
         <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-800">
           React Component Demo
@@ -590,9 +589,7 @@ export default StudyCounter;`,
       description: 'Hook React riutilizzabile per persistere lo stato nel localStorage con fallback sicuro.',
       language: 'tsx',
       tags: ['Hooks', 'LocalStorage', 'TypeScript'],
-      code: `import React, { useState, useEffect } from 'react';
-
-export function useLocalStorage<T>(key: string, initialValue: T) {
+      code: `export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -612,26 +609,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   }, [key, storedValue]);
 
   return [storedValue, setStoredValue] as const;
-}
-
-export default function LocalStorageDemo() {
-  const [name, setName] = useLocalStorage('demo-username', 'Studente');
-
-  return (
-    <div className="p-4 bg-white border border-slate-200 rounded-xl max-w-sm font-sans space-y-3">
-      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Test useLocalStorage</h4>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full text-xs p-2 border border-slate-300 rounded-lg focus:outline-sky-500"
-        placeholder="Scrivi qualcosa..."
-      />
-      <p className="text-xs text-slate-600">
-        Valore salvato nel browser: <strong className="text-sky-600">{name}</strong>
-      </p>
-    </div>
-  );
 }`,
       isFavorite: true,
       createdAt: '2026-08-10T16:30:00.000Z',
@@ -644,9 +621,7 @@ export default function LocalStorageDemo() {
       description: 'Gestione robusta di azioni (startSession, tick, reset) con Reducer.',
       language: 'tsx',
       tags: ['useReducer', 'State', 'Architettura'],
-      code: `import React, { useReducer } from 'react';
-
-type State = { isStudying: boolean; seconds: number; activeSubject: string };
+      code: `type State = { isStudying: boolean; seconds: number; activeSubject: string };
 type Action = 
   | { type: 'START'; subject: string }
   | { type: 'TICK' }
@@ -663,44 +638,6 @@ function studyReducer(state: State, action: Action): State {
     default:
       return state;
   }
-}
-
-export default function ReducerDemo() {
-  const [state, dispatch] = useReducer(studyReducer, {
-    isStudying: false,
-    seconds: 0,
-    activeSubject: 'React',
-  });
-
-  return (
-    <div className="p-4 bg-white border border-slate-200 rounded-xl max-w-sm font-sans space-y-3">
-      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Test useReducer Tracker</h4>
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-slate-500">Materia: <strong>{state.activeSubject}</strong></span>
-        <span className="font-mono text-sky-600 font-bold">{state.seconds}s</span>
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={() => dispatch({ type: 'START', subject: 'React Hooks' })}
-          className="px-3 py-1.5 bg-sky-600 text-white text-xs font-bold rounded-lg hover:bg-sky-500 transition"
-        >
-          Avvia Sessione
-        </button>
-        <button
-          onClick={() => dispatch({ type: 'TICK' })}
-          className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200 transition"
-        >
-          +1 Secondo
-        </button>
-        <button
-          onClick={() => dispatch({ type: 'RESET' })}
-          className="px-2 py-1.5 border border-slate-200 text-slate-500 text-xs rounded-lg hover:bg-slate-50"
-        >
-          Reset
-        </button>
-      </div>
-    </div>
-  );
 }`,
       createdAt: '2026-08-11T19:30:00.000Z',
       updatedAt: '2026-08-11T19:30:00.000Z',
@@ -712,9 +649,7 @@ export default function ReducerDemo() {
       description: 'Hook per gestire chiamate asincrone con stato di caricamento e pulizia degli effetti.',
       language: 'tsx',
       tags: ['Hooks', 'useFetch', 'Async', 'API'],
-      code: `import React, { useState, useEffect } from 'react';
-
-function useFetch<T>(url: string) {
+      code: `function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -748,28 +683,6 @@ function useFetch<T>(url: string) {
   }, [url]);
 
   return { data, loading, error };
-}
-
-export default function FetchDemo() {
-  const { data, loading, error } = useFetch<{ title: string; completed: boolean }>(
-    'https://jsonplaceholder.typicode.com/todos/1'
-  );
-
-  return (
-    <div className="p-4 bg-white border border-slate-200 rounded-xl max-w-sm font-sans space-y-2">
-      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Test useFetch API</h4>
-      {loading && <p className="text-xs text-slate-400 animate-pulse">Caricamento dati in corso...</p>}
-      {error && <p className="text-xs text-rose-500 font-medium">Errore: {error}</p>}
-      {data && (
-        <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1">
-          <p className="font-semibold text-slate-800">{data.title}</p>
-          <span className={`inline-block px-2 py-0.5 text-[10px] rounded-full font-bold ${data.completed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-            {data.completed ? 'Completato' : 'In Corso'}
-          </span>
-        </div>
-      )}
-    </div>
-  );
 }`,
       createdAt: '2026-08-12T10:00:00.000Z',
       updatedAt: '2026-08-12T10:00:00.000Z',
@@ -781,9 +694,7 @@ export default function FetchDemo() {
       description: 'Gestione modulare di input controllati con messaggi di errore e reset.',
       language: 'tsx',
       tags: ['Form', 'Componenti', 'Validazione', 'Eventi'],
-      code: `import React, { useState } from 'react';
-
-function QuickNoteForm({ onSave }: { onSave?: (note: string) => void }) {
+      code: `function QuickNoteForm({ onSave }: { onSave?: (note: string) => void }) {
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -799,7 +710,7 @@ function QuickNoteForm({ onSave }: { onSave?: (note: string) => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 rounded-xl border border-slate-200 bg-white space-y-3 max-w-sm font-sans">
+    <form onSubmit={handleSubmit} className="p-4 rounded-xl border border-slate-200 bg-white space-y-3 max-w-sm">
       <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Nuovo Appunto Rapido</h4>
       <input
         type="text"
@@ -821,13 +732,10 @@ function QuickNoteForm({ onSave }: { onSave?: (note: string) => void }) {
       {submitted && <p className="text-[11px] text-emerald-600 font-bold">✅ Appunto salvato!</p>}
     </form>
   );
-}
-
-export default QuickNoteForm;`,
+}`,
       createdAt: '2026-08-12T11:00:00.000Z',
       updatedAt: '2026-08-12T11:00:00.000Z',
     },
-
 
     // --- Python ---
     {
