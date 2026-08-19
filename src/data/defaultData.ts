@@ -589,7 +589,10 @@ export default StudyCounter;`,
       description: 'Hook React riutilizzabile per persistere lo stato nel localStorage con fallback sicuro.',
       language: 'tsx',
       tags: ['Hooks', 'LocalStorage', 'TypeScript'],
-      code: `export function useLocalStorage<T>(key: string, initialValue: T) {
+      code: `import { useState, useEffect } from 'react';
+
+// Custom Hook
+export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -609,10 +612,27 @@ export default StudyCounter;`,
   }, [key, storedValue]);
 
   return [storedValue, setStoredValue] as const;
+}
+
+// Componente Demo per il rendering dell'anteprima
+export default function LocalStorageDemo() {
+  const [name, setName] = useLocalStorage<string>('demo_user_name', 'Mario');
+
+  return (
+    <div className="p-4 bg-slate-900 rounded-xl text-white space-y-3">
+      <h4 className="text-xs font-bold text-slate-400">Test LocalStorage:</h4>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="w-full px-3 py-1.5 bg-slate-800 text-sm rounded border border-slate-700 text-white focus:outline-none focus:border-cyan-500"
+      />
+      <p className="text-xs text-slate-400">Valore salvato: <span className="text-cyan-400 font-mono">{name}</span></p>
+    </div>
+  );
 }`,
-      isFavorite: true,
-      createdAt: '2026-08-10T16:30:00.000Z',
-      updatedAt: '2026-08-10T16:30:00.000Z',
+      createdAt: '2026-08-11T11:00:00.000Z',
+      updatedAt: '2026-08-11T11:00:00.000Z',
     },
     {
       id: 'snip-react-3',
@@ -649,7 +669,10 @@ function studyReducer(state: State, action: Action): State {
       description: 'Hook per gestire chiamate asincrone con stato di caricamento e pulizia degli effetti.',
       language: 'tsx',
       tags: ['Hooks', 'useFetch', 'Async', 'API'],
-      code: `function useFetch<T>(url: string) {
+      code: `import { useState, useEffect } from 'react';
+
+// Custom Hook
+export function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -683,6 +706,21 @@ function studyReducer(state: State, action: Action): State {
   }, [url]);
 
   return { data, loading, error };
+}
+
+// Componente Demo per il rendering dell'anteprima
+export default function FetchDemo() {
+  const { data, loading, error } = useFetch<{ title: string }>('https://jsonplaceholder.typicode.com/todos/1');
+
+  if (loading) return <div className="p-4 text-xs font-semibold text-slate-400">Caricamento in corso...</div>;
+  if (error) return <div className="p-4 text-xs font-semibold text-red-400">Errore: {error}</div>;
+
+  return (
+    <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 text-white space-y-1">
+      <h4 className="text-xs font-bold text-slate-400">Dato recuperato via API:</h4>
+      <p className="text-sm font-medium text-cyan-400">{data?.title}</p>
+    </div>
+  );
 }`,
       createdAt: '2026-08-12T10:00:00.000Z',
       updatedAt: '2026-08-12T10:00:00.000Z',
