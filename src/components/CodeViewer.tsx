@@ -311,89 +311,109 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
 
     // --- REACT (TSX / JSX / React) ---
     if (['tsx', 'jsx', 'react', 'typescript', 'ts'].includes(langNorm)) {
-      // Escape and clean imports and exports for in-browser execution
-      const cleanCode = code
-        .replace(/import\s+[\s\S]*?from\s+['"][^'"]+['"];?/g, '')
-        .replace(/import\s+['"][^'"]+['"];?/g, '')
-        .replace(/export\s+default\s+/g, 'const __DefaultExportComponent = ')
-        .replace(/export\s+function\s+/g, 'function ')
-        .replace(/export\s+const\s+/g, 'const ')
-        .replace(/export\s+let\s+/g, 'let ')
-        .replace(/export\s+type\s+/g, 'type ')
-        .replace(/export\s+interface\s+/g, 'interface ')
-        .replace(/export\s+class\s+/g, 'class ');
-
       return `<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; padding: 16px; margin: 0; color: #0f172a; }
   </style>
-  <script>
-    window.onerror = function(msg) {
-      var root = document.getElementById('root');
-      if (root) {
-        root.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:12px;font-family:monospace;font-size:12px;color:#b91c1c;"><div style="font-weight:bold;margin-bottom:6px;">❌ Errore di Compilazione / Esecuzione React:</div><div>' + msg + '</div></div>';
-      }
-    };
-  </script>
 </head>
 <body>
   <div id="root">
     <div style="padding: 16px; color: #64748b; font-size: 12px; font-family: sans-serif;">⏳ Inizializzazione anteprima React...</div>
   </div>
 
-  <script type="text/babel" data-presets="react,typescript">
-    const {
-      useState,
-      useEffect,
-      useReducer,
-      useMemo,
-      useCallback,
-      useRef,
-      createContext,
-      useContext,
-      useLayoutEffect,
-      useId
-    } = React;
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const rootEl = document.getElementById('root');
 
-    try {
-      ${cleanCode}
-
-      let ComponentToRender = null;
-
-      // 1. Default Export Component
-      if (typeof __DefaultExportComponent === 'function') {
-        ComponentToRender = __DefaultExportComponent;
-      }
-
-      // 2. Named Component (PascalCase)
-      if (!ComponentToRender) {
-        const compRegex = /(?:function|const|let|var|class)\\s+([A-Z][a-zA-Z0-9_]*)/g;
-        let match;
-        const candidates = [];
-        const sourceCode = ${JSON.stringify(cleanCode)};
-        while ((match = compRegex.exec(sourceCode)) !== null) {
-          candidates.push(match[1]);
+      try {
+        if (!window.Babel || !window.React || !window.ReactDOM) {
+          throw new Error("Librerie React o Babel non disponibili.");
         }
 
-        for (let i = 0; i < candidates.length; i++) {
-          const name = candidates[i];
+        const rawCode = ${JSON.stringify(code)};
+
+        // 1. Strip import statements and clean export keywords
+        let preparedCode = rawCode
+          .replace(/import\s+.*?from\s+['"].*?['"];?/g, '')
+          .replace(/import\s+['"].*?['"];?/g, '')
+          .replace(/export\s+default\s+/g, 'window.__DefaultExportComponent = ')
+          .replace(/export\s+function\s+/g, 'function ')
+          .replace(/export\s+const\s+/g, 'const ')
+          .replace(/export\s+let\s+/g, 'let ')
+          .replace(/export\s+class\s+/g, 'class ');
+
+        // 2. Transpile TSX / JSX / TypeScript with Babel
+        const transpiled = Babel.transform(preparedCode, {
+          presets: [
+            ['react', { runtime: 'classic' }],
+            ['typescript', { isTSX: true, allExtensions: true }]
+          ],
+          filename: 'snippet.tsx'
+        }).code;
+
+        // 3. Destructure standard React hooks
+        const {
+          useState,
+          useEffect,
+          useReducer,
+          useMemo,
+          useCallback,
+          useRef,
+          createContext,
+          useContext,
+          useLayoutEffect,
+          useId
+        } = React;
+
+        // 4. Helper to evaluate declared entities
+        function getDeclaredEntity(name) {
           try {
-            const candidate = eval(name);
-            if (typeof candidate === 'function') {
-              const Comp = candidate;
+            const evalFn = new Function(
+              'React', 'ReactDOM', 'useState', 'useEffect', 'useReducer',
+              'useMemo', 'useCallback', 'useRef', 'createContext', 'useContext',
+              'useLayoutEffect', 'useId',
+              transpiled + '; return (typeof ' + name + ' !== "undefined" ? ' + name + ' : null);'
+            );
+            return evalFn(React, ReactDOM, useState, useEffect, useReducer, useMemo, useCallback, useRef, createContext, useContext, useLayoutEffect, useId);
+          } catch(e) {
+            return null;
+          }
+        }
+
+        // 5. Dynamic Detection
+        let ComponentToRender = null;
+
+        // Check for default export
+        if (typeof window.__DefaultExportComponent === 'function') {
+          ComponentToRender = window.__DefaultExportComponent;
+        }
+
+        // Check for named React components (PascalCase)
+        if (!ComponentToRender) {
+          const componentRegex = /(?:function|const|let|var|class)\s+([A-Z][a-zA-Z0-9_]*)/g;
+          let match;
+          const componentNames = [];
+          while ((match = componentRegex.exec(rawCode)) !== null) {
+            componentNames.push(match[1]);
+          }
+
+          for (const name of componentNames) {
+            const ent = getDeclaredEntity(name);
+            if (typeof ent === 'function') {
+              const Comp = ent;
               ComponentToRender = function ComponentHarness() {
                 const [actionLogs, setActionLogs] = useState([]);
                 const handleAction = (payload) => {
-                  const msg = typeof payload === 'string' ? payload : (payload && payload.target ? 'Evento utente registrato' : JSON.stringify(payload));
-                  setActionLogs(prev => [String(msg), ...prev.slice(0, 3)]);
+                  const msg = typeof payload === 'string' ? payload : JSON.stringify(payload);
+                  setActionLogs(prev => [msg, ...prev.slice(0, 3)]);
                 };
 
                 return (
@@ -421,24 +441,22 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
               };
               break;
             }
-          } catch (e) {}
-        }
-      }
-
-      // 3. Custom Hooks (useXxx)
-      if (!ComponentToRender) {
-        const hookRegex = /(?:function|const|let|var)\\s+(use[A-Z][a-zA-Z0-9_]*)/g;
-        let match;
-        const hooks = [];
-        const sourceCode = ${JSON.stringify(cleanCode)};
-        while ((match = hookRegex.exec(sourceCode)) !== null) {
-          hooks.push(match[1]);
+          }
         }
 
-        if (hooks.length > 0) {
-          const hookName = hooks[0];
-          try {
-            const hookFn = eval(hookName);
+        // Check for Custom Hooks (useXxx)
+        if (!ComponentToRender) {
+          const hookRegex = /(?:function|const|let|var)\s+(use[A-Z][a-zA-Z0-9_]*)/g;
+          let hookMatch;
+          const hookNames = [];
+          while ((hookMatch = hookRegex.exec(rawCode)) !== null) {
+            hookNames.push(hookMatch[1]);
+          }
+
+          if (hookNames.length > 0) {
+            const hookName = hookNames[0];
+            const hookFn = getDeclaredEntity(hookName);
+
             if (typeof hookFn === 'function') {
               if (hookName === 'useLocalStorage') {
                 ComponentToRender = function UseLocalStorageDemo() {
@@ -455,7 +473,7 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
                         <span className="text-[11px] text-emerald-600 font-bold">● Sincronizzato con LocalStorage</span>
                       </div>
                       <h3 className="text-sm font-bold text-slate-800 mb-1">Test Interattivo useLocalStorage</h3>
-                      <p className="text-xs text-slate-500 mb-3">Modifica il valore per testare la persistenza reattiva:</p>
+                      <p className="text-xs text-slate-500 mb-3">Modifica il valore per testare la persistenza reattiva.</p>
 
                       <div className="space-y-3">
                         <div>
@@ -535,6 +553,7 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
                   );
                 };
               } else {
+                // Generic Custom Hook Harness
                 ComponentToRender = function GenericHookHarness() {
                   let hookResult = null;
                   let hookError = null;
@@ -564,24 +583,22 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
                 };
               }
             }
-          } catch(e) {}
-        }
-      }
-
-      // 4. Reducers (xxxReducer)
-      if (!ComponentToRender) {
-        const reducerRegex = /(?:function|const|let|var)\\s+([a-zA-Z0-9_]*[rR]educer)/g;
-        let match;
-        const reducers = [];
-        const sourceCode = ${JSON.stringify(cleanCode)};
-        while ((match = reducerRegex.exec(sourceCode)) !== null) {
-          reducers.push(match[1]);
+          }
         }
 
-        if (reducers.length > 0) {
-          const redName = reducers[0];
-          try {
-            const redFn = eval(redName);
+        // Check for Reducers (studyReducer, etc.)
+        if (!ComponentToRender) {
+          const reducerRegex = /(?:function|const|let|var)\s+([a-zA-Z0-9_]*[rR]educer)/g;
+          let redMatch;
+          const redNames = [];
+          while ((redMatch = reducerRegex.exec(rawCode)) !== null) {
+            redNames.push(redMatch[1]);
+          }
+
+          if (redNames.length > 0) {
+            const redName = redNames[0];
+            const redFn = getDeclaredEntity(redName);
+
             if (typeof redFn === 'function') {
               ComponentToRender = function ReducerHarness() {
                 const initialState = { isStudying: false, seconds: 0, activeSubject: 'React & TypeScript' };
@@ -642,32 +659,30 @@ const CodeViewerBase: React.FC<CodeViewerProps> = ({
                 );
               };
             }
-          } catch(e) {}
+          }
         }
-      }
 
-      const rootEl = document.getElementById('root');
-      if (ComponentToRender) {
-        ReactDOM.createRoot(rootEl).render(<ComponentToRender />);
-      } else {
-        ReactDOM.createRoot(rootEl).render(
-          <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
-            <h4 className="text-sm font-bold text-emerald-900 mb-1">✅ Codice React Valido</h4>
-            <p className="text-xs text-emerald-700">Tipi e sintassi TSX verificati senza errori.</p>
-          </div>
-        );
-      }
-    } catch (err) {
-      const rootEl = document.getElementById('root');
-      if (rootEl) {
+        // Render to Root
+        if (ComponentToRender) {
+          ReactDOM.createRoot(rootEl).render(React.createElement(ComponentToRender));
+        } else {
+          ReactDOM.createRoot(rootEl).render(
+            React.createElement('div', { className: 'rounded-2xl bg-emerald-50 border border-emerald-200 p-5' }, [
+              React.createElement('h4', { className: 'text-sm font-bold text-emerald-900 mb-1', key: 'h4' }, '✅ Codice React Compilato con Successo'),
+              React.createElement('p', { className: 'text-xs text-emerald-700', key: 'p' }, 'Sintassi TSX e tipi verificati senza errori.')
+            ])
+          );
+        }
+
+      } catch (err) {
         rootEl.innerHTML = \`
           <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 12px; font-family: monospace; font-size: 12px; color: #b91c1c;">
-            <div style="font-weight: bold; margin-bottom: 6px;">❌ Errore di Esecuzione React:</div>
+            <div style="font-weight: bold; margin-bottom: 6px;">❌ Errore di Compilazione / Esecuzione React:</div>
             <div>\${err.message}</div>
           </div>
         \`;
       }
-    }
+    });
   </script>
 </body>
 </html>`;
